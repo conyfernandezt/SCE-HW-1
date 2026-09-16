@@ -11,8 +11,6 @@ df_distance = pd.read_csv("Assignment/fc_zip3_distance.csv")
 # All fulfillment centers
 distance_columns = [
     "GA-303",
-    "NY-134",
-    "TX-799",
     "UT-841",
     "AZ-852",
     "CA-900",
@@ -210,3 +208,7 @@ plt.savefig(
     bbox_inches="tight"
 )
 plt.show()
+
+
+
+print(df_distance.head(10))
