@@ -107,7 +107,7 @@ print("\nmsa.csv:")
 print(msa.head())
 
 # ============================================================
-# 5. BUILD THE GEOGRAPHIC DEMAND TABLE
+# 4. BUILD THE GEOGRAPHIC DEMAND TABLE
 # ============================================================
 
 geo = market.merge(
@@ -187,7 +187,7 @@ print(
 )
 
 # ============================================================
-# 7. Y-B-# : YEARLY x MARKET TYPE x UNITS
+# 5. Y-B-# : YEARLY x MARKET TYPE x UNITS
 # ============================================================
 
 Y_B_units = (
@@ -244,7 +244,7 @@ plt.tight_layout()
 plt.show()
 
 # ============================================================
-# 8. M-C-# : MONTHLY x STATE x UNITS
+# 6. M-C-# : MONTHLY x STATE x UNITS
 # ============================================================
 
 state_units = (
@@ -307,7 +307,7 @@ plt.tight_layout()
 plt.show()
 
 # ============================================================
-# 9. Y-C-$ : YEARLY x STATE x DOLLARS
+# 7. Y-C-$ : YEARLY x STATE x DOLLARS
 # ============================================================
 
 Y_C_dollars = (
@@ -369,7 +369,7 @@ plt.tight_layout()
 plt.show()
 
 # ============================================================
-# 10. D-D-W : DAILY x ZIP3 x WEIGHT
+# 8. D-D-W : DAILY x ZIP3 x WEIGHT
 # ============================================================
 
 D_D_weight = (
