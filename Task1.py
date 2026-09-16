@@ -73,23 +73,12 @@ print(f"Tsukumo annual weight:      {tsukumo_annual_weight:,.0f} lb")
 
 from pathlib import Path
 
-DATA_DIR = Path.home() / "Documents" / "Casework1_Phase1_Fall26"
-
-market = pd.read_csv(
-    DATA_DIR / "zip3_market.csv",
-    dtype={"ZIP3": str}
-)
-
-pmf = pd.read_csv(
-    DATA_DIR / "zip3_pmf.csv",
-    dtype={"ZIP3": str}
-)
-
-msa = pd.read_csv(
-    DATA_DIR / "msa.csv",
-    dtype={"3-digit ZIP code": str}
-)
-
+market = pd.read_csv("Assignment/zip3_market.csv")
+market["ZIP3"] = market["ZIP3"].astype(str)
+pmf = pd.read_csv("Assignment/zip3_pmf.csv")
+pmf["ZIP3"] = pmf["ZIP3"].astype(str)
+msa = pd.read_csv("Assignment/msa.csv")
+msa["3-digit ZIP code"] = msa["3-digit ZIP code"].astype(str)
 
 # Preserve three-digit ZIP formatting
 market["ZIP3"] = market["ZIP3"].str.zfill(3)
