@@ -1,5 +1,8 @@
 import pandas as pd
 
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', 1000)
+
 df_distance_1FC = pd.read_csv("Assignment/fc_zip3_distance.csv")
 df_distance_4FC = pd.read_csv("Assignment/fc_zip3_distance.csv")
 df_distance_15FC = pd.read_csv("Assignment/fc_zip3_distance.csv")
@@ -176,7 +179,10 @@ result_bucket_market_4FC = df_4FC.pivot_table(
     aggfunc="sum",
     fill_value=0
 ).round(4)
-print(result_bucket_market_4FC)
+result_bucket_market_4FC_normalized = result_bucket_market_4FC.div(
+    result_bucket_market_4FC.sum(axis=1), axis=0
+).round(4)
+print(result_bucket_market_4FC_normalized)
 print("\n\n")
 
 print("***** 15-FC Network Demand Share by Market Type and Distance Bucket *****\n")
@@ -187,6 +193,9 @@ result_bucket_market_15FC = df_15FC.pivot_table(
     aggfunc="sum",
     fill_value=0
 ).round(4)
-print(result_bucket_market_15FC)
+result_bucket_market_15FC_normalized = result_bucket_market_15FC.div(
+    result_bucket_market_15FC.sum(axis=1), axis=0
+).round(4)
+print(result_bucket_market_15FC_normalized)
 print("\n\n")
 
