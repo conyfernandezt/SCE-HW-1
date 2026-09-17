@@ -6,9 +6,6 @@ df_distance_15FC = pd.read_csv("Assignment/fc_zip3_distance.csv")
 df_pmf = pd.read_csv("Assignment/zip3_pmf.csv")
 df_market = pd.read_csv("Assignment/zip3_market.csv")
 
-# df_main = df_pmf
-# df_main["Market"] = df_market["Market"]
-
 distance_column_1FC = ["GA-303"]
 
 distance_columns_4FC = [
