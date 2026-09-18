@@ -74,3 +74,26 @@ scenarios["Market_Growth"] = scenarios["Market_Growth"] * 100
 scenarios["Tsukumo_Share_Growth"] = scenarios["Tsukumo_Share_Growth"] * 100
 
 print(scenarios)
+
+# Current values from the case
+current_market_demand = 2_000_000
+current_tsukumo_share = 0.036
+
+# Calculate future total market demand
+scenarios["Future_Market_Demand"] = (
+    current_market_demand * (1 + scenarios["Market_Growth"] / 100)
+)
+
+# Calculate future Tsukumo market share
+scenarios["Future_Tsukumo_Share"] = (
+    current_tsukumo_share * (1 + scenarios["Tsukumo_Share_Growth"] / 100)
+)
+
+# Calculate annual Tsukumo demand
+scenarios["Annual_Tsukumo_Demand"] = (
+    scenarios["Future_Market_Demand"]
+    * scenarios["Future_Tsukumo_Share"]
+)
+
+# Display the results
+print(scenarios)
