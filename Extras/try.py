@@ -2,7 +2,7 @@ import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
-from matplotlib import colors as mcolors
+import matplotlib.colors as mcolors
 
 df_coordinates = pd.read_csv("Assignment/zip3_coordinates.csv")
 df_distance_4FC = pd.read_csv("Assignment/fc_zip3_distance.csv")
@@ -128,9 +128,26 @@ df_distance_15FC["Distance Bucket"] = df_15FC["Distance Bucket"]
 df_distance_15FC["Eligible FCs"] = df_distance_15FC.apply(get_fcs, axis=1, distance_columns=distance_columns_15FC)
 df_15FC["Eligible FCs"] = df_distance_15FC["Eligible FCs"]
 
-print(df_15FC.head(10))
 
 # task 4a
+df_4FC["cluster"] = df_4FC["Eligible FCs"].apply(tuple)
+df_fulfillment_clusters_4FC = (
+    df_4FC.groupby("cluster")["ZIP3"]
+      .agg(list)
+      .reset_index()
+)
+df_4FC["cluster_id"] = df_4FC["cluster"].factorize()[0]
+print(df_4FC.head(10))
+
+df_15FC["cluster"] = df_15FC["Eligible FCs"].apply(tuple)
+df_fulfillment_clusters_15FC = (
+    df_15FC.groupby("cluster")["ZIP3"]
+      .agg(list)
+      .reset_index()
+)
+df_15FC["cluster_id"] = df_15FC["cluster"].factorize()[0]
+print(df_15FC.head(10))
+print("fulfillment clusters for 15: " + str(len(df_fulfillment_clusters_15FC)) + "\n")
 
 df_4c = df_4FC.merge(df_coordinates, left_on="ZIP3", right_on="ZIP3", how="left")
 
@@ -246,40 +263,44 @@ def plot_map(gdf, title, fc_list):
     )
     plt.show()
 
-plot_map(gdf_4c, "4-FC ZIP3 Buckets Across the United States", distance_columns_4FC)
-plot_map(gdf_15FC, "15-FC ZIP3 Buckets Across the United States", distance_columns_15FC)
+#plot_map(gdf_4c, "4-FC ZIP3 Buckets Across the United States", distance_columns_4FC)
+#plot_map(gdf_15FC, "15-FC ZIP3 Buckets Across the United States", distance_columns_15FC)
 
 # task 4b
 
-df_4c["Number of FCs"] = df_4c["Eligible FCs"].apply(len)
+df_4FC["Number of FCs"] = df_4FC["Eligible FCs"].apply(len)
 df_15FC["Number of FCs"] = df_15FC["Eligible FCs"].apply(len)
 
-
-
-gdf_4b = gpd.GeoDataFrame(
-    df_4c,
-    geometry=gpd.points_from_xy(
-        df_4c["Lon"],
-        df_4c["Lat"]
-    ),
-    crs="EPSG:4326"
+df_4c = df_4FC.merge(
+    df_coordinates,
+    on="ZIP3",
+    how="left"
 )
 
-gdf_15b = gpd.GeoDataFrame(
-    df_15FC,
-    geometry=gpd.points_from_xy(
-        df_15FC["Lon"],
-        df_15FC["Lat"]
-    ),
-    crs="EPSG:4326"
+df_15c = df_15FC.merge(
+    df_coordinates,
+    on="ZIP3",
+    how="left"
 )
 
+
+gdf_4c = gpd.GeoDataFrame(
+    df_coordinates, 
+    left_on="ZIP3", 
+    right_on="ZIP3", 
+    how="left"
+)
+
+gdf_15c = gpd.GeoDataFrame(
+    df_coordinates, 
+    left_on="ZIP3", 
+    right_on="ZIP3", 
+    how="left"
+)
 
 def plot_number_fcs(gdf, title):
-
     fig, ax = plt.subplots(figsize=(14, 9))
 
-    # Plot US map
     usa.plot(
         ax=ax,
         edgecolor="black",
@@ -287,85 +308,52 @@ def plot_number_fcs(gdf, title):
         linewidth=0.5
     )
 
-    # Remove ZIP3s without coordinates
     gdf = gdf[
         gdf.geometry.notna() &
         ~gdf.geometry.is_empty
     ].copy()
 
-    # Red -> Yellow -> Green
+    # red, yellow, green
     cmap = LinearSegmentedColormap.from_list(
         "red_yellow_green",
         ["red", "yellow", "green"]
     )
 
-    # Determine range of number of eligible FCs
     min_fcs = gdf["Number of FCs"].min()
     max_fcs = gdf["Number of FCs"].max()
 
-    norm = mcolors.Normalize(
-        vmin=min_fcs,
-        vmax=max_fcs
-    )
+    norm = mcolors.Normalize(vmin=min_fcs, vmax=max_fcs)
 
-    # Plot ZIP3s
+
     gdf.plot(
         ax=ax,
+        markersize=15,
+        alpha=0.8,
         column="Number of FCs",
         cmap=cmap,
         norm=norm,
-        markersize=15,
-        alpha=0.8
+        legend=True,
+        legend_kwds={"label": "Number of Eligible FCs"}
     )
 
-    # Add colorbar
-    sm = plt.cm.ScalarMappable(
-        cmap=cmap,
-        norm=norm
-    )
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
 
-    cbar = fig.colorbar(
-        sm,
-        ax=ax,
-        shrink=0.7
-    )
+    cbar = plt.colorbar(sm, ax=ax, shrink=0.7)
 
-    cbar.set_label(
-        "Number of FCs that can serve the ZIP3",
-        fontsize=12
-    )
+    cbar.set_label("Number of Eligible FCs", fontsize=12    )
 
     ax.set_title(
-        title,
-        fontsize=16
+    title,
+    fontsize=16
     )
 
     ax.set_axis_off()
 
     plt.tight_layout()
-
     plt.savefig(
         f"Assignment/{title}.png",
         dpi=300,
         bbox_inches="tight"
     )
-
     plt.show()
-
-
-plot_number_fcs(gdf_4b, "Number of Eligible FCs for 4-FC Network")
-plot_number_fcs(gdf_15b, "Number of Eligible FCs for 15-FC Network")
-
-
-# task 4c
-# calculate total demand share of zips that are only served by a single FC
-# we'll call these "exclusive zips"
-exclusive_demand_4FC = df_4FC.loc[df_4FC["Eligible FCs"].str.len()==1, "PMF"].sum().round(4)
-print("Exclusive Demand for 4-FC Network: " + str(exclusive_demand_4FC) + "\n")
-
-exclusive_demand_15FC = df_15FC.loc[df_15FC["Eligible FCs"].str.len()==1, "PMF"].sum().round(4)
-print("Exclusive Demand for 15-FC Network: " + str(exclusive_demand_15FC) + "\n")
-
-
-# task 4d

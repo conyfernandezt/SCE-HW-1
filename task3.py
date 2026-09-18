@@ -208,7 +208,3 @@ plt.savefig(
     bbox_inches="tight"
 )
 plt.show()
-
-
-
-print(df_distance.head(10))

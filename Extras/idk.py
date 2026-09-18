@@ -246,16 +246,17 @@ def plot_map(gdf, title, fc_list):
     )
     plt.show()
 
-plot_map(gdf_4c, "4-FC ZIP3 Buckets Across the United States", distance_columns_4FC)
-plot_map(gdf_15FC, "15-FC ZIP3 Buckets Across the United States", distance_columns_15FC)
+# ---------------------------------------------------------
+# Task 4b
+# ---------------------------------------------------------
 
-# task 4b
-
+# Count the number of FCs that can serve each ZIP3
 df_4c["Number of FCs"] = df_4c["Eligible FCs"].apply(len)
 df_15FC["Number of FCs"] = df_15FC["Eligible FCs"].apply(len)
 
 
-
+# The coordinates were already merged above,
+# so we can use the existing data frames
 gdf_4b = gpd.GeoDataFrame(
     df_4c,
     geometry=gpd.points_from_xy(
@@ -356,16 +357,3 @@ def plot_number_fcs(gdf, title):
 
 plot_number_fcs(gdf_4b, "Number of Eligible FCs for 4-FC Network")
 plot_number_fcs(gdf_15b, "Number of Eligible FCs for 15-FC Network")
-
-
-# task 4c
-# calculate total demand share of zips that are only served by a single FC
-# we'll call these "exclusive zips"
-exclusive_demand_4FC = df_4FC.loc[df_4FC["Eligible FCs"].str.len()==1, "PMF"].sum().round(4)
-print("Exclusive Demand for 4-FC Network: " + str(exclusive_demand_4FC) + "\n")
-
-exclusive_demand_15FC = df_15FC.loc[df_15FC["Eligible FCs"].str.len()==1, "PMF"].sum().round(4)
-print("Exclusive Demand for 15-FC Network: " + str(exclusive_demand_15FC) + "\n")
-
-
-# task 4d
