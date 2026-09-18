@@ -97,3 +97,21 @@ scenarios["Annual_Tsukumo_Demand"] = (
 
 # Display the results
 print(scenarios)
+
+# Load seasonality data
+seasonality = pd.read_excel("demand_seasonalities.xlsx")
+
+# Extract week-of-year proportions
+week_factors = seasonality["Proportion"].dropna().to_numpy()
+
+# Extract day-of-week proportions
+day_factors = seasonality["Proportion.1"].dropna().to_numpy()
+
+print("Number of weeks:", len(week_factors))
+print("Number of days:", len(day_factors))
+
+print("\nWeek proportions:")
+print(week_factors)
+
+print("\nDay-of-week proportions:")
+print(day_factors)
