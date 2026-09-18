@@ -128,7 +128,6 @@ df_distance_15FC["Distance Bucket"] = df_15FC["Distance Bucket"]
 df_distance_15FC["Eligible FCs"] = df_distance_15FC.apply(get_fcs, axis=1, distance_columns=distance_columns_15FC)
 df_15FC["Eligible FCs"] = df_distance_15FC["Eligible FCs"]
 
-print(df_15FC.head(10))
 
 # task 4a
 
@@ -359,13 +358,90 @@ plot_number_fcs(gdf_15b, "Number of Eligible FCs for 15-FC Network")
 
 
 # task 4c
+print("\n *** Task 4c ***\n\n")
 # calculate total demand share of zips that are only served by a single FC
 # we'll call these "exclusive zips"
 exclusive_demand_4FC = df_4FC.loc[df_4FC["Eligible FCs"].str.len()==1, "PMF"].sum().round(4)
-print("Exclusive Demand for 4-FC Network: " + str(exclusive_demand_4FC) + "\n")
+print("Single-FC Exclusive Demand for 4-FC Network: " + str(exclusive_demand_4FC) + "\n")
 
 exclusive_demand_15FC = df_15FC.loc[df_15FC["Eligible FCs"].str.len()==1, "PMF"].sum().round(4)
-print("Exclusive Demand for 15-FC Network: " + str(exclusive_demand_15FC) + "\n")
+print("Single-FC Exclusive Demand for 15-FC Network: " + str(exclusive_demand_15FC) + "\n")
 
 
 # task 4d
+print("\n *** Task 4d ***\n\n")
+# dictionary to hold demand share of each bucket
+bucket_demand_dict_4FC = {
+    "0-50": 0,
+    "51-150": 0,
+    "151-300": 0,
+    "301-600": 0,
+    "601-1000": 0,
+    "1001-1400": 0,
+    "1401-1800": 0,
+    "over 1800": 0
+}
+
+df_distance_4FC["PMF"] = df_4FC["PMF"]
+clean_df_distance_4FC = df_distance_4FC.rename(columns=lambda x: x.replace("-", "_"))
+clean_df_distance_4FC.columns = clean_df_distance_4FC.columns.str.lower().str.replace(" ", "_")
+clean_df_distance_4FC["eligible_fcs"] = clean_df_distance_4FC["eligible_fcs"].apply(
+    lambda fcs: [fc.replace("-", "_") for fc in fcs]
+)
+
+# loop thru each row
+for row in clean_df_distance_4FC.itertuples():
+    num_eligible_fcs = len(row.eligible_fcs)
+    # if only one eligible FC, add 100% of demand
+    if num_eligible_fcs == 1:
+        bucket_demand_dict_4FC[row.distance_bucket] += row.pmf
+    # otherwise, 80% to closest FC, 20% split among the rest
+    else:
+        bucket_demand_dict_4FC[row.distance_bucket] += (0.8*row.pmf)
+        for fc in row.eligible_fcs[1:]:
+            current_bucket = get_bucket(getattr(row, fc.lower()))
+            bucket_demand_dict_4FC[current_bucket] += ((0.2/(num_eligible_fcs-1)) * row.pmf)
+
+print("Demand Distribution across Distance Buckets under Fulfillment Rule (4-FC Network):\n")
+print("Bucket  :  Demand\n")
+for bucket, demand in bucket_demand_dict_4FC.items():
+    print(f"{bucket}: {round(demand, 4)}")
+print("\n\n")
+# repeat for 15-FC
+# dictionary to hold demand share of each bucket
+bucket_demand_dict_15FC = {
+    "0-50": 0,
+    "51-150": 0,
+    "151-300": 0,
+    "301-600": 0,
+    "601-1000": 0,
+    "1001-1400": 0,
+    "1401-1800": 0,
+    "over 1800": 0
+}
+
+df_distance_15FC["PMF"] = df_15FC["PMF"]
+clean_df_distance_15FC = df_distance_15FC.rename(columns=lambda x: x.replace("-", "_"))
+clean_df_distance_15FC.columns = clean_df_distance_15FC.columns.str.lower().str.replace(" ", "_")
+clean_df_distance_15FC["eligible_fcs"] = clean_df_distance_15FC["eligible_fcs"].apply(
+    lambda fcs: [fc.replace("-", "_") for fc in fcs]
+)
+
+# loop thru each row
+for row in clean_df_distance_15FC.itertuples():
+    num_eligible_fcs = len(row.eligible_fcs)
+    # if only one eligible FC, add 100% of demand
+    if num_eligible_fcs == 1:
+        bucket_demand_dict_15FC[row.distance_bucket] += row.pmf
+    # otherwise, 80% to closest FC, 20% split among the rest
+    else:
+        bucket_demand_dict_15FC[row.distance_bucket] += (0.8*row.pmf)
+        for fc in row.eligible_fcs[1:]:
+            current_bucket = get_bucket(getattr(row, fc.lower()))
+            bucket_demand_dict_15FC[current_bucket] += ((0.2/(num_eligible_fcs-1)) * row.pmf)
+
+print("Demand Distribution across Distance Buckets under Fulfillment Rule (15-FC Network):\n")
+print("Bucket  :  Demand\n")
+for bucket, demand in bucket_demand_dict_15FC.items():
+    print(f"{bucket}: {round(demand, 4)}")
+print("\n\n")
