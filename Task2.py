@@ -1,5 +1,9 @@
 import numpy as np
 import pandas as pd
+from pathlib import Path
+
+
+data_dir = Path(__file__).resolve().parent / "Assignment"
 
 
 # ============================================================
@@ -99,8 +103,8 @@ print(scenarios)
 # 3. LOAD ACTUAL SEASONALITY DATA
 # ------------------------------------------------------------
 
-seasonality = pd.read_excel(
-    "demand_seasonalities(1).xlsx"
+seasonality = pd.read_csv(
+    data_dir / "demand_seasonalities.csv"
 )
 
 
@@ -111,11 +115,17 @@ print(seasonality.columns)
 
 
 # Week-of-year proportions
-week_factors = seasonality["Proportion"].dropna().to_numpy()
+week_factors = (
+    seasonality["Proportion"].dropna().str.rstrip("%").astype(float).to_numpy()
+    / 100
+)
 
 
 # Day-of-week proportions
-day_factors = seasonality["Proportion.1"].dropna().to_numpy()
+day_factors = (
+    seasonality["Proportion.1"].dropna().str.rstrip("%").astype(float).to_numpy()
+    / 100
+)
 
 
 print("\nNumber of weeks:", len(week_factors))
@@ -133,7 +143,7 @@ print("Sum of day proportions:",
 # ------------------------------------------------------------
 
 zip3_pmf = pd.read_csv(
-    "zip3_pmf(1).csv"
+    data_dir / "zip3_pmf.csv"
 )
 
 
@@ -312,4 +322,3 @@ print("\nDone!")
 print("Results saved as:")
 print("- task2_demand_results.csv")
 print("- task2_growth_scenarios.csv")
-

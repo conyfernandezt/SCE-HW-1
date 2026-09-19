@@ -202,32 +202,54 @@ print(
     )
 )
 
-fig, ax = plt.subplots(figsize=(8, 5))
+# Original bar chart (commented out)
+# fig, ax = plt.subplots(figsize=(8, 5))
+#
+# plot_data = Y_B_units.sort_values(
+#     "Annual_Units"
+# )
+#
+# bars = ax.barh(
+#     plot_data["Market"],
+#     plot_data["Annual_Units"]
+# )
+#
+# ax.set_title(
+#     "Tsukumo Conservative Annual Demand by Market Type"
+# )
+# ax.set_xlabel("Annual Units")
+# ax.set_ylabel("Market Type")
+#
+# for bar in bars:
+#     value = bar.get_width()
+#
+#     ax.text(
+#         value,
+#         bar.get_y() + bar.get_height() / 2,
+#         f" {value:,.0f}",
+#         va="center"
+#     )
+#
+# plt.tight_layout()
+# plt.show()
 
-plot_data = Y_B_units.sort_values(
-    "Annual_Units"
+# Pie chart of annual demand by market type
+fig, ax = plt.subplots(figsize=(8, 6))
+
+wedges, _, _ = ax.pie(
+    Y_B_units["Annual_Units"],
+    autopct="%1.1f%%",
+    startangle=90
 )
-
-bars = ax.barh(
-    plot_data["Market"],
-    plot_data["Annual_Units"]
+ax.legend(
+    wedges,
+    Y_B_units["Market"],
+    title="Market Type",
+    loc="center left",
+    bbox_to_anchor=(1, 0.5)
 )
-
-ax.set_title(
-    "Tsukumo Conservative Annual Demand by Market Type"
-)
-ax.set_xlabel("Annual Units")
-ax.set_ylabel("Market Type")
-
-for bar in bars:
-    value = bar.get_width()
-
-    ax.text(
-        value,
-        bar.get_y() + bar.get_height() / 2,
-        f" {value:,.0f}",
-        va="center"
-    )
+ax.set_title("Tsukumo Conservative Annual Demand by Market Type")
+ax.axis("equal")
 
 plt.tight_layout()
 plt.show()
@@ -273,7 +295,8 @@ fig, ax = plt.subplots(figsize=(9, 7))
 
 bars = ax.barh(
     top15_states["State"],
-    top15_states["Monthly_Units"]
+    top15_states["Monthly_Units"],
+    color="#4C956C"
 )
 
 ax.set_title(
@@ -331,11 +354,12 @@ top15_revenue = (
     .sort_values("Annual_Dollars")
 )
 
-fig, ax = plt.subplots(figsize=(9, 7))
+fig, ax = plt.subplots(figsize=(14, 7))
 
 bars = ax.barh(
     top15_revenue["State"],
-    top15_revenue["Annual_Dollars"] / 1_000_000
+    top15_revenue["Annual_Dollars"] / 1_000_000,
+    color="maroon"
 )
 
 ax.set_title(
@@ -398,11 +422,12 @@ top20_zip = (
     .sort_values("Daily_Weight_lb")
 )
 
-fig, ax = plt.subplots(figsize=(9, 8))
+fig, ax = plt.subplots(figsize=(12, 8))
 
 bars = ax.barh(
     top20_zip["ZIP3"],
-    top20_zip["Daily_Weight_lb"]
+    top20_zip["Daily_Weight_lb"],
+    color="darkblue"
 )
 
 ax.set_title(
