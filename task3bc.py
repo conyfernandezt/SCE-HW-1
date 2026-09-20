@@ -179,11 +179,9 @@ result_bucket_market_4FC = df_4FC.pivot_table(
     aggfunc="sum",
     fill_value=0
 ).round(4)
-result_bucket_market_4FC_normalized = result_bucket_market_4FC.div(
-    result_bucket_market_4FC.sum(axis=1), axis=0
-).round(4)
-print(result_bucket_market_4FC_normalized)
-print("\n\n")
+result_bucket_market_4FC.insert(loc=5, column='1001-1400', value=[0.0, 0.0, 0.0])
+print(result_bucket_market_4FC)
+
 
 print("***** 15-FC Network Demand Share by Market Type and Distance Bucket *****\n")
 result_bucket_market_15FC = df_15FC.pivot_table(
@@ -193,9 +191,5 @@ result_bucket_market_15FC = df_15FC.pivot_table(
     aggfunc="sum",
     fill_value=0
 ).round(4)
-result_bucket_market_15FC_normalized = result_bucket_market_15FC.div(
-    result_bucket_market_15FC.sum(axis=1), axis=0
-).round(4)
-print(result_bucket_market_15FC_normalized)
-print("\n\n")
-
+result_bucket_market_15FC.insert(loc=5, column='1001-1400', value=[0.0, 0.0, 0.0])
+print(result_bucket_market_15FC)
