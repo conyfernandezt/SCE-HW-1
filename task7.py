@@ -219,3 +219,103 @@ robustness_levels = {
 }
 
 autonomy_weeks = [4, 6, 8]
+
+# Calculate all alternative network scenarios
+
+scenario_results = []
+
+for autonomy in autonomy_weeks:
+
+    horizon_days = autonomy * 7
+
+    demand_col = f"Demand_{autonomy}w"
+    sigma_col = f"Sigma_{autonomy}w"
+
+    network_daily[demand_col] = np.nan
+    network_daily[sigma_col] = np.nan
+
+    for i in range(len(network_daily) - horizon_days + 1):
+
+        demand_horizon = network_daily.iloc[
+            i:i+horizon_days
+        ]["Mean_Demand"].sum()
+
+        sigma_values = network_daily.iloc[
+            i:i+horizon_days
+        ]["Sigma"]
+
+        sigma_horizon = np.sqrt(
+            (sigma_values ** 2).sum()
+        )
+
+        network_daily.loc[
+            network_daily.index[i],
+            demand_col
+        ] = demand_horizon
+
+        network_daily.loc[
+            network_daily.index[i],
+            sigma_col
+        ] = sigma_horizon
+
+
+    for robustness, z in robustness_levels.items():
+
+        stock_col = f"Network_Stock_{autonomy}w_{int(robustness*100)}"
+
+        network_daily[stock_col] = (
+            network_daily[demand_col]
+            + z * network_daily[sigma_col]
+        )
+
+        dc_col = f"DC_Inventory_{autonomy}w_{int(robustness*100)}"
+
+        network_daily[dc_col] = (
+            network_daily[stock_col]
+            - network_daily["FC_Inventory"]
+        )
+
+        max_network = network_daily[stock_col].max()
+
+        max_dc = network_daily[dc_col].max()
+
+        max_fc = network_daily["FC_Inventory"].max()
+
+        scenario_results.append({
+            "Autonomy": autonomy,
+            "Robustness": robustness,
+            "Maximum_FC_Inventory": max_fc,
+            "Maximum_DC_Inventory": max_dc,
+            "Maximum_Network_Inventory": max_network
+        })
+
+scenario_results = pd.DataFrame(scenario_results)
+
+print(scenario_results)
+
+fc_table = scenario_results.pivot(
+    index="Autonomy",
+    columns="Robustness",
+    values="Maximum_FC_Inventory"
+)
+
+print("Maximum FC Inventory")
+print(fc_table)
+
+dc_table = scenario_results.pivot(
+    index="Autonomy",
+    columns="Robustness",
+    values="Maximum_DC_Inventory"
+)
+
+print("Maximum DC Inventory")
+print(dc_table)
+
+network_table = scenario_results.pivot(
+    index="Autonomy",
+    columns="Robustness",
+    values="Maximum_Network_Inventory"
+)
+
+print("Maximum Network Inventory")
+print(network_table)
