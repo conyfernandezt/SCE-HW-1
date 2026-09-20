@@ -74,7 +74,6 @@ df_4FC_shipping_cost["bucket"] = demand_share_by_bucket_4FC["Bucket"]
 for i in range(len(otd_promises)):
     df_4FC_shipping_cost[otd_promises[i]] = tsukumo_demand * demand_share_by_bucket_4FC["Demand Share"] * shipment_costs[i]
 
-print(t3.result_bucket_market_4FC)
 shipping_cost_bucket_matrix_4FC = df_4FC_shipping_cost.iloc[:, 1:].to_numpy()
 bucket_market_matrix_4FC = t3.result_bucket_market_4FC.iloc[:, :].to_numpy()
 shipping_cost_matrix_4FC = bucket_market_matrix_4FC @ shipping_cost_bucket_matrix_4FC
