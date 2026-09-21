@@ -1,0 +1,6 @@
+Result,Variability_Included
+Annual national demand,Market growth + Tsukumo share growth
+Annual demand by market type or state,Market growth + Tsukumo share growth + ZIP3 PMF
+Weekly national demand,Market growth + Tsukumo share growth + week seasonality
+Daily national demand,Market growth + Tsukumo share growth + week seasonality + day seasonality
+Optional daily ZIP3 demand,Market growth + Tsukumo share growth + week seasonality + day seasonality + ZIP3 PMF
