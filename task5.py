@@ -104,33 +104,34 @@ gross_operating_profit_matrix_15FC = net_revenue_matrix_15FC - production_cost_m
 
 
 # *** Plot Results ***
-market_list = ["Primary", "Secondary", "Tertiary"]
+if __name__ == "__main__":
+    market_list = ["Primary", "Secondary", "Tertiary"]
 
-matrix_1FC_millions = gross_operating_profit_matrix_1FC / 1000000
-for i, market in enumerate(market_list):
-    plt.plot(otd_promises, matrix_1FC_millions[i], marker='o', label=market)
-plt.xlabel("OTD Promise (days)")
-plt.ylabel("Gross Operating Profit ($ millions)")
-plt.title("Single-FC Network: Gross Operating Profit by OTD for each Market Type")
-plt.legend()
-plt.show()
-
-
-matrix_4FC_millions = gross_operating_profit_matrix_4FC / 1000000
-for i, market in enumerate(market_list):
-    plt.plot(otd_promises, matrix_4FC_millions[i], marker='o', label=market)
-plt.xlabel("OTD Promise (days)")
-plt.ylabel("Gross Operating Profit ($ millions)")
-plt.title("Four-FC Network: Gross Operating Profit by OTD for each Market Type")
-plt.legend()
-plt.show()
+    matrix_1FC_millions = gross_operating_profit_matrix_1FC / 1000000
+    for i, market in enumerate(market_list):
+        plt.plot(otd_promises, matrix_1FC_millions[i], marker='o', label=market)
+    plt.xlabel("OTD Promise (days)")
+    plt.ylabel("Gross Operating Profit ($ millions)")
+    plt.title("Single-FC Network: Gross Operating Profit by OTD for each Market Type")
+    plt.legend()
+    plt.show()
 
 
-matrix_15FC_millions = gross_operating_profit_matrix_15FC / 1000000
-for i, market in enumerate(market_list):
-    plt.plot(otd_promises, matrix_15FC_millions[i], marker='o', label=market)
-plt.xlabel("OTD Promise (days)")
-plt.ylabel("Gross Operating Profit ($ millions)")
-plt.title("15-FC Network: Gross Operating Profit by OTD for each Market Type")
-plt.legend()
-plt.show()
+    matrix_4FC_millions = gross_operating_profit_matrix_4FC / 1000000
+    for i, market in enumerate(market_list):
+        plt.plot(otd_promises, matrix_4FC_millions[i], marker='o', label=market)
+    plt.xlabel("OTD Promise (days)")
+    plt.ylabel("Gross Operating Profit ($ millions)")
+    plt.title("Four-FC Network: Gross Operating Profit by OTD for each Market Type")
+    plt.legend()
+    plt.show()
+
+
+    matrix_15FC_millions = gross_operating_profit_matrix_15FC / 1000000
+    for i, market in enumerate(market_list):
+        plt.plot(otd_promises, matrix_15FC_millions[i], marker='o', label=market)
+    plt.xlabel("OTD Promise (days)")
+    plt.ylabel("Gross Operating Profit ($ millions)")
+    plt.title("15-FC Network: Gross Operating Profit by OTD for each Market Type")
+    plt.legend()
+    plt.show()
