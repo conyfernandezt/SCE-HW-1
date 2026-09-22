@@ -4,10 +4,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 
+print("----------------\n")
+print('Task 7: 15 Fcs\n')
+print("----------------\n")
+
+
 # we'll take the demand from task 2
 
 demand = pd.read_csv("task2_demand_results.csv")
-
 
 df = pd.read_csv("Assignment/zip3_coordinates.csv")
 
@@ -136,6 +140,223 @@ print(
     max_fc_network
 )
 
+print("----------------\n")
+print('Task 7: 4 Fcs\n')
+print("----------------\n")
+
+distance_columns_4FC = [
+    "GA-303",
+    "NY-134",
+    "TX-799",
+    "UT-841"
+]
+
+df_distance["closest_location_4FC"] = (
+    df_distance[distance_columns_4FC].idxmin(axis=1)
+)
+
+demand_4FC = pd.read_csv("task2_demand_results.csv")
+
+demand_4FC = demand_4FC.merge(
+    df_distance[["ZIP3", "closest_location_4FC"]],
+    on="ZIP3",
+    how="left"
+)
+
+fc_daily_4FC = (
+    demand_4FC
+    .groupby(
+        ["Week", "Day", "closest_location_4FC"]
+    )
+    .agg(
+        Mean_Demand=("Mean_Demand", "sum"),
+        Sigma=("Sigma", lambda x: np.sqrt((x ** 2).sum()))
+    )
+    .reset_index()
+)
+
+fc_daily_4FC["Time"] = (
+    (fc_daily_4FC["Week"] - 1) * 7
+    + (fc_daily_4FC["Day"] - 1)
+)
+
+fc_daily_4FC = fc_daily_4FC.sort_values(
+    ["closest_location_4FC", "Time"]
+)
+
+fc_daily_4FC["Demand_21d"] = np.nan
+fc_daily_4FC["Sigma_21d"] = np.nan
+
+for fc in fc_daily_4FC["closest_location_4FC"].unique():
+
+    fc_data = fc_daily_4FC[
+        fc_daily_4FC["closest_location_4FC"] == fc
+    ].copy()
+
+    fc_data = fc_data.sort_values("Time")
+
+    for i in range(len(fc_data) - 20):
+
+        demand_21d = fc_data.iloc[
+            i:i+21
+        ]["Mean_Demand"].sum()
+
+        sigma_21d = np.sqrt(
+            (
+                fc_data.iloc[i:i+21]["Sigma"] ** 2
+            ).sum()
+        )
+
+        fc_daily_4FC.loc[
+            fc_data.index[i],
+            "Demand_21d"
+        ] = demand_21d
+
+        fc_daily_4FC.loc[
+            fc_data.index[i],
+            "Sigma_21d"
+        ] = sigma_21d
+
+fc_daily_4FC["Stock_3w_99"] = (
+    fc_daily_4FC["Demand_21d"]
+    + z_99 * fc_daily_4FC["Sigma_21d"]
+)
+
+max_fc_4FC = (
+    fc_daily_4FC
+    .groupby("closest_location_4FC")["Stock_3w_99"]
+    .max()
+    .reset_index()
+)
+
+max_fc_4FC.columns = [
+    "FC",
+    "Maximum_3w_99_Inventory"
+]
+
+print("4-FC Maximum inventory by FC:")
+print(max_fc_4FC)
+
+daily_fc_total_4FC = (
+    fc_daily_4FC
+    .groupby("Time")["Stock_3w_99"]
+    .sum()
+    .reset_index(name="FC_Inventory_4FC")
+)
+
+print(
+    "4-FC maximum total FC inventory:",
+    daily_fc_total_4FC["FC_Inventory_4FC"].max()
+)
+
+
+print("----------------\n")
+print('Task 7: 1 Fcs\n')
+print("----------------\n")
+
+distance_columns_1FC = [
+    "GA-303"
+]
+
+df_distance["closest_location_1FC"] = (
+    df_distance[distance_columns_1FC].idxmin(axis=1)
+)
+
+demand_1FC = pd.read_csv("task2_demand_results.csv")
+
+demand_1FC = demand_1FC.merge(
+    df_distance[["ZIP3", "closest_location_1FC"]],
+    on="ZIP3",
+    how="left"
+)
+
+fc_daily_1FC = (
+    demand_1FC
+    .groupby(
+        ["Week", "Day", "closest_location_1FC"]
+    )
+    .agg(
+        Mean_Demand=("Mean_Demand", "sum"),
+        Sigma=("Sigma", lambda x: np.sqrt((x ** 2).sum()))
+    )
+    .reset_index()
+)
+
+fc_daily_1FC["Time"] = (
+    (fc_daily_1FC["Week"] - 1) * 7
+    + (fc_daily_1FC["Day"] - 1)
+)
+
+fc_daily_1FC = fc_daily_1FC.sort_values(
+    ["closest_location_1FC", "Time"]
+)
+
+fc_daily_1FC["Demand_21d"] = np.nan
+fc_daily_1FC["Sigma_21d"] = np.nan
+
+for fc in fc_daily_1FC["closest_location_1FC"].unique():
+
+    fc_data = fc_daily_1FC[
+        fc_daily_1FC["closest_location_1FC"] == fc
+    ].copy()
+
+    fc_data = fc_data.sort_values("Time")
+
+    for i in range(len(fc_data) - 20):
+
+        demand_21d = fc_data.iloc[
+            i:i+21
+        ]["Mean_Demand"].sum()
+
+        sigma_21d = np.sqrt(
+            (
+                fc_data.iloc[i:i+21]["Sigma"] ** 2
+            ).sum()
+        )
+
+        fc_daily_1FC.loc[
+            fc_data.index[i],
+            "Demand_21d"
+        ] = demand_21d
+
+        fc_daily_1FC.loc[
+            fc_data.index[i],
+            "Sigma_21d"
+        ] = sigma_21d
+
+fc_daily_1FC["Stock_3w_99"] = (
+    fc_daily_1FC["Demand_21d"]
+    + z_99 * fc_daily_1FC["Sigma_21d"]
+)
+
+max_fc_1FC = (
+    fc_daily_1FC
+    .groupby("closest_location_1FC")["Stock_3w_99"]
+    .max()
+    .reset_index()
+)
+
+max_fc_1FC.columns = [
+    "FC",
+    "Maximum_3w_99_Inventory"
+]
+
+print("\n1-FC Maximum inventory:")
+print(max_fc_1FC)
+
+daily_fc_total_1FC = (
+    fc_daily_1FC
+    .groupby("Time")["Stock_3w_99"]
+    .sum()
+    .reset_index(name="FC_Inventory_1FC")
+)
+
+print(
+    "1-FC maximum total FC inventory:",
+    daily_fc_total_1FC["FC_Inventory_1FC"].max()
+)
+
+
 network_daily = (
     demand
     .groupby(["Week", "Day"])
@@ -155,6 +376,20 @@ network_daily = network_daily.sort_values("Time")
 
 network_daily["Demand_42d"] = np.nan
 network_daily["Sigma_42d"] = np.nan
+
+network_daily = network_daily.merge(
+    daily_fc_total_4FC,
+    on="Time",
+    how="left"
+)
+
+network_daily = network_daily.merge(
+    daily_fc_total_1FC,
+    on="Time",
+    how="left"
+)
+
+
 
 for i in range(len(network_daily) - 41):
 
@@ -262,67 +497,200 @@ for autonomy in autonomy_weeks:
 
     for robustness, z in robustness_levels.items():
 
-        stock_col = f"Network_Stock_{autonomy}w_{int(robustness*100)}"
+        stock_col = (
+            f"Network_Stock_"
+            f"{autonomy}w_"
+            f"{int(robustness*100)}"
+        )
 
+        # Overall network inventory target
         network_daily[stock_col] = (
             network_daily[demand_col]
             + z * network_daily[sigma_col]
         )
 
-        dc_col = f"DC_Inventory_{autonomy}w_{int(robustness*100)}"
+        # -----
+        # 15-FC
+        # -----
 
-        network_daily[dc_col] = (
+        dc_col_15FC = (
+            f"DC_Inventory_15FC_"
+            f"{autonomy}w_"
+            f"{int(robustness*100)}"
+        )
+
+        network_daily[dc_col_15FC] = (
             network_daily[stock_col]
             - network_daily["FC_Inventory"]
         ).clip(lower=0)
 
+        max_dc_15FC = network_daily[
+            dc_col_15FC
+        ].max()
 
-        max_dc = network_daily[dc_col].max()
+        max_fc_15FC = network_daily[
+            "FC_Inventory"
+        ].max()
 
-        max_fc = network_daily["FC_Inventory"].max()
-
-        max_network = max_fc + max_dc
+        max_network_15FC = (
+            network_daily["FC_Inventory"]
+            + network_daily[dc_col_15FC]
+        ).max()
 
         scenario_results.append({
+            "Network": "15-FC",
             "Autonomy": autonomy,
             "Robustness": robustness,
-            "Maximum_FC_Inventory": max_fc,
-            "Maximum_DC_Inventory": max_dc,
-            "Maximum_Network_Inventory": max_network
+            "Maximum_FC_Inventory": max_fc_15FC,
+            "Maximum_DC_Inventory": max_dc_15FC,
+            "Maximum_Network_Inventory": max_network_15FC
         })
+
+
+        # ----
+        # 4-FC
+        # ----
+
+        dc_col_4FC = (
+            f"DC_Inventory_4FC_"
+            f"{autonomy}w_"
+            f"{int(robustness*100)}"
+        )
+
+        network_daily[dc_col_4FC] = (
+            network_daily[stock_col]
+            - network_daily["FC_Inventory_4FC"]
+        ).clip(lower=0)
+
+        max_dc_4FC = network_daily[
+            dc_col_4FC
+        ].max()
+
+        max_fc_4FC = network_daily[
+            "FC_Inventory_4FC"
+        ].max()
+
+        max_network_4FC = (
+            network_daily["FC_Inventory_4FC"]
+            + network_daily[dc_col_4FC]
+        ).max()
+
+        scenario_results.append({
+            "Network": "4-FC",
+            "Autonomy": autonomy,
+            "Robustness": robustness,
+            "Maximum_FC_Inventory": max_fc_4FC,
+            "Maximum_DC_Inventory": max_dc_4FC,
+            "Maximum_Network_Inventory": max_network_4FC
+        })
+
+
+        # ----
+        # 1-FC
+        # ----
+
+        dc_col_1FC = (
+            f"DC_Inventory_1FC_"
+            f"{autonomy}w_"
+            f"{int(robustness*100)}"
+        )
+
+        network_daily[dc_col_1FC] = (
+            network_daily[stock_col]
+            - network_daily["FC_Inventory_1FC"]
+        ).clip(lower=0)
+
+        max_dc_1FC = network_daily[
+            dc_col_1FC
+        ].max()
+
+        max_fc_1FC = network_daily[
+            "FC_Inventory_1FC"
+        ].max()
+
+        max_network_1FC = (
+            network_daily["FC_Inventory_1FC"]
+            + network_daily[dc_col_1FC]
+        ).max()
+
+        scenario_results.append({
+            "Network": "1-FC",
+            "Autonomy": autonomy,
+            "Robustness": robustness,
+            "Maximum_FC_Inventory": max_fc_1FC,
+            "Maximum_DC_Inventory": max_dc_1FC,
+            "Maximum_Network_Inventory": max_network_1FC
+        })
+
 
 scenario_results = pd.DataFrame(scenario_results)
 
 print(scenario_results)
 
-fc_table = scenario_results.pivot(
-    index="Autonomy",
-    columns="Robustness",
-    values="Maximum_FC_Inventory"
+print("\n----")
+print("\nTask 7: 6 weeks 99%")
+print("\n----")
+
+print(
+    network_daily[
+        [
+            "Time",
+            "Network_Stock_6w_99",
+
+            "FC_Inventory_1FC",
+            "DC_Inventory_1FC_6w_99",
+
+            "FC_Inventory_4FC",
+            "DC_Inventory_4FC_6w_99",
+
+            "FC_Inventory",
+            "DC_Inventory_15FC_6w_99"
+        ]
+    ].head(20)
 )
 
-print("Maximum FC Inventory")
-print(fc_table)
+for network in ["1-FC", "4-FC", "15-FC"]:
 
-dc_table = scenario_results.pivot(
-    index="Autonomy",
-    columns="Robustness",
-    values="Maximum_DC_Inventory"
-)
+    temp = scenario_results[
+        scenario_results["Network"] == network
+    ]
 
-print("Maximum DC Inventory")
-print(dc_table)
+    print("\n----")
+    print(network)
+    print("----")
 
-network_table = scenario_results.pivot(
-    index="Autonomy",
-    columns="Robustness",
-    values="Maximum_Network_Inventory"
-)
+    fc_table = temp.pivot(
+        index="Autonomy",
+        columns="Robustness",
+        values="Maximum_FC_Inventory"
+    )
 
-print("Maximum Network Inventory")
-print(network_table)
+    print("\nMaximum FC Inventory")
+    print(fc_table)
+
+    dc_table = temp.pivot(
+        index="Autonomy",
+        columns="Robustness",
+        values="Maximum_DC_Inventory"
+    )
+
+    print("\nMaximum DC Inventory")
+    print(dc_table)
+
+    network_table = temp.pivot(
+        index="Autonomy",
+        columns="Robustness",
+        values="Maximum_Network_Inventory"
+    )
+
+    print("\nMaximum Network Inventory")
+    print(network_table)
 
 #task 8
+
+print("----------------\n")
+print('Task 8: \n')
+print("----------------\n")
 
 # dc_t+1 = dc_t + production_t - demand_t
 # production_t = demand_t - dc_t+1 - dc_t
@@ -343,16 +711,15 @@ network_task8 = network_task8.merge(
     how="left"
 )
 
-
-network_task8 = network_task8.drop(columns=['Demand_42d', 'Sigma_42d', 'Demand_4w', 'Sigma_4w', 
-                                            'Network_Stock_4w_50', 'DC_Inventory_4w_50', 'Network_Stock_4w_68', 
-                                            'DC_Inventory_4w_68', 'Network_Stock_4w_95', 'DC_Inventory_4w_95', 
-                                            'Network_Stock_4w_99', 'DC_Inventory_4w_99', 'Network_Stock_6w_50', 
-                                            'DC_Inventory_6w_50', 'Network_Stock_6w_68', 'DC_Inventory_6w_68', 
-                                            'Network_Stock_6w_95', 'DC_Inventory_6w_95', 'DC_Inventory_6w_99', 
-                                            'Demand_8w','Sigma_8w', 'Network_Stock_8w_50', 'DC_Inventory_8w_50', 
-                                            'Network_Stock_8w_68', 'DC_Inventory_8w_68', 'Network_Stock_8w_95', 
-                                            'DC_Inventory_8w_95', 'Network_Stock_8w_99', 'DC_Inventory_8w_99', 'Mean_Demand_y'])
+network_task8 = network_task8.drop(
+    columns=['Demand_42d','Sigma_42d','Demand_4w','Sigma_4w','Network_Stock_4w_50','Network_Stock_4w_68',
+        'Network_Stock_4w_95','Network_Stock_4w_99','Demand_6w','Sigma_6w','Network_Stock_6w_50',
+        'Network_Stock_6w_68','Network_Stock_6w_95','Network_Stock_6w_99','Demand_8w',
+        'Sigma_8w','Network_Stock_8w_50','Network_Stock_8w_68','Network_Stock_8w_95',
+        'Network_Stock_8w_99','Mean_Demand_y'
+    ],
+    errors='ignore'
+)
 
 print(network_task8.columns.tolist())
 
