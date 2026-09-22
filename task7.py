@@ -697,6 +697,10 @@ print("----------------\n")
 
 # i'll use the constucted network_daily
 
+dc_15FC = network_daily["DC_Inventory_15FC_6w_99"].copy()
+dc_4FC = network_daily["DC_Inventory_4FC_6w_99"].copy()
+dc_1FC = network_daily["DC_Inventory_1FC_6w_99"].copy()
+
 grouped_demand = demand.groupby(["Week", "Day"])["Mean_Demand"].sum().reset_index()
 
 grouped_demand["Time"] = (grouped_demand["Week"] - 1) * 7 + (grouped_demand["Day"] - 1)
@@ -710,6 +714,8 @@ network_task8 = network_task8.merge(
     on=["Time", "Week", "Day"],
     how="left"
 )
+
+network_task8["DC_Inventory"] = dc_15FC
 
 network_task8 = network_task8.drop(
     columns=['Demand_42d','Sigma_42d','Demand_4w','Sigma_4w','Network_Stock_4w_50','Network_Stock_4w_68',
@@ -1191,6 +1197,978 @@ print(
     ]
 )
 
+
+if network_task8["inv_seg"].min() < 0:
+    print("There is backlog.")
+else:
+    print("There is no backlog.")
+
+
+print("\n----")
+print("\nTask 8 for 4 FCs")
+print("\n----")
+
+grouped_demand = demand.groupby(["Week", "Day"])["Mean_Demand"].sum().reset_index()
+
+grouped_demand["Time"] = (grouped_demand["Week"] - 1) * 7 + (grouped_demand["Day"] - 1)
+
+#print(grouped_demand.head(10))
+
+network_task8 = network_daily.copy()
+
+network_task8 = network_task8.merge(
+    grouped_demand,
+    on=["Time", "Week", "Day"],
+    how="left"
+)
+
+network_task8["DC_Inventory"] = dc_4FC
+
+network_task8 = network_task8.drop(
+    columns=['Demand_42d','Sigma_42d','Demand_4w','Sigma_4w','Network_Stock_4w_50','Network_Stock_4w_68',
+        'Network_Stock_4w_95','Network_Stock_4w_99','Demand_6w','Sigma_6w','Network_Stock_6w_50',
+        'Network_Stock_6w_68','Network_Stock_6w_95','Network_Stock_6w_99','Demand_8w',
+        'Sigma_8w','Network_Stock_8w_50','Network_Stock_8w_68','Network_Stock_8w_95',
+        'Network_Stock_8w_99','Mean_Demand_y'
+    ],
+    errors='ignore'
+)
+
+print(network_task8.columns.tolist())
+
+network_task8 = network_task8.sort_values("Time")
+
+network_task8['DC_delta'] = network_task8['DC_Inventory'] - network_task8['DC_Inventory'].shift(1)
+
+inventory_t0 = network_task8.loc[network_task8["Time"] == network_task8["Time"].min(), "DC_Inventory"].iloc[0]
+
+network_task8.loc[
+    network_task8["Time"] == network_task8["Time"].min(),
+    "DC_delta"
+] = (
+    network_task8.loc[
+        network_task8["Time"] == network_task8["Time"].min(),
+        "DC_Inventory"
+    ].iloc[0]
+    - inventory_t0
+)
+
+network_task8['Production'] = network_task8['Mean_Demand_x'] + network_task8['DC_delta']
+
+network_task8['DC_calculated_inventory'] = np.nan
+
+dc_day1 = (inventory_t0 + network_task8.loc[
+        network_task8["Time"] == network_task8["Time"].min(), "Production"].iloc[0] - network_task8.loc[
+        network_task8["Time"] == network_task8["Time"].min(), "Mean_Demand_x"].iloc[0])
+
+network_task8.loc[network_task8['Time'] == network_task8['Time'].min(), 'DC_calculated_inventory'] = dc_day1
+
+for i in range (1, len(network_task8)):
+
+    current_index = network_task8.index[i]
+    previous_index = network_task8.index[i-1]
+
+    inventory = (
+        network_task8.loc[previous_index, "DC_calculated_inventory"]
+    + network_task8.loc[current_index, "Production"]
+    - network_task8.loc[current_index, "Mean_Demand_x"])
+
+    network_task8.loc[current_index, 'DC_calculated_inventory'] = inventory
+
+
+# smoothing where we will assume that the initial inventory at the DC is the inventory target
+
+avg_demand = network_task8['Mean_Demand_x'].mean()
+
+network_task8['smooth_production'] = avg_demand
+
+network_task8['smooth_inv'] = np.nan
+
+sm_inv = (inventory_t0 + network_task8.loc[network_task8["Time"] == network_task8["Time"].min(), "smooth_production"].iloc[0]
+    - network_task8.loc[network_task8["Time"] == network_task8["Time"].min(), "Mean_Demand_x"].iloc[0])
+
+network_task8.loc[network_task8["Time"] == network_task8["Time"].min(), 'smooth_inv'] = sm_inv
+
+for i in range(1, len(network_task8)):
+
+    current_index = network_task8.index[i]
+    previous_index = network_task8.index[i-1]
+
+    sm_inv = (network_task8.loc[previous_index, "smooth_inv"]
+    + network_task8.loc[current_index, "smooth_production"]
+    - network_task8.loc[current_index, "Mean_Demand_x"]
+)
+
+    network_task8.loc[current_index, 'smooth_inv'] = sm_inv
+
+backlog = network_task8['smooth_inv'].min()
+
+print(
+    "Minimum inventory:",
+    network_task8["smooth_inv"].min()
+)
+
+if backlog < 0:
+    print(f"There's backlog of {backlog}")
+else:
+    print("There's no backlog")
+
+print("Initial inventory:", inventory_t0)
+print("Average production:", avg_demand)
+print("Minimum inventory:", network_task8["smooth_inv"].min())
+print("Maximum inventory:", network_task8["smooth_inv"].max())
+
+
+print(
+    network_task8[
+        [
+            "Time",
+            "Mean_Demand_x",
+            "smooth_production",
+            "smooth_inv"
+        ]
+    ].head(20)
+)
+# Constant production
+avg_demand = network_task8["Mean_Demand_x"].mean()
+
+network_task8["smooth_production"] = avg_demand
+
+# Initialize inventory
+network_task8["smooth_inv"] = np.nan
+
+# Initial inventory
+inventory = inventory_t0
+
+# Calculate inventory day by day
+for i in range(len(network_task8)):
+
+    current_index = network_task8.index[i]
+
+    inventory = (
+        inventory
+        + network_task8.loc[current_index, "smooth_production"]
+        - network_task8.loc[current_index, "Mean_Demand_x"]
+    )
+
+    network_task8.loc[
+        current_index,
+        "smooth_inv"
+    ] = inventory
+
+# there is no backlog, too much inventory
+
+# now we will try with smoothing no initial invetory
+
+avg_demand = network_task8['Mean_Demand_x'].mean()
+
+network_task8['smooth_production'] = avg_demand
+
+network_task8['smooth_inv'] = np.nan
+
+network_task8.loc[network_task8["Time"] == network_task8["Time"].min(), 'smooth_inv'] = 0
+
+for i in range(1, len(network_task8)):
+
+    current_index = network_task8.index[i]
+    previous_index = network_task8.index[i-1]
+
+    sm_inv = (network_task8.loc[previous_index, "smooth_inv"]
+    + network_task8.loc[current_index, "smooth_production"]
+    - network_task8.loc[current_index, "Mean_Demand_x"]
+)
+
+    network_task8.loc[current_index, 'smooth_inv'] = sm_inv
+
+backlog = network_task8['smooth_inv'].min()
+
+print(
+    "Minimum inventory:",
+    network_task8["smooth_inv"].min()
+)
+
+if backlog < 0:
+    print(f"There's backlog of {backlog}")
+else:
+    print("There's no backlog")
+
+print("Initial inventory:", inventory_t0)
+print("Average production:", avg_demand)
+print("Minimum inventory:", network_task8["smooth_inv"].min())
+print("Maximum inventory:", network_task8["smooth_inv"].max())
+
+
+print(
+    network_task8[
+        [
+            "Time",
+            "Mean_Demand_x",
+            "smooth_production",
+            "smooth_inv"
+        ]
+    ].head(20)
+)
+# Constant production
+avg_demand = network_task8["Mean_Demand_x"].mean()
+
+network_task8["smooth_production"] = avg_demand
+
+# Initialize inventory
+network_task8["smooth_inv"] = np.nan
+
+# Initial inventory
+inventory = inventory_t0
+
+# Calculate inventory day by day
+for i in range(len(network_task8)):
+
+    current_index = network_task8.index[i]
+
+    inventory = (
+        inventory
+        + network_task8.loc[current_index, "smooth_production"]
+        - network_task8.loc[current_index, "Mean_Demand_x"]
+    )
+
+    network_task8.loc[
+        current_index,
+        "smooth_inv"
+    ] = inventory
+
+
+# there's backlog
+
+# smoothing with pre-production
+
+required_inventory = 0
+
+required_inventory_values = []
+
+for i in range(len(network_task8)-1, -1, -1):
+
+    current_index = network_task8.index[i]
+
+    required_inventory = (
+        required_inventory
+        + network_task8.loc[current_index, "Mean_Demand_x"]
+        - avg_demand
+    )
+
+    required_inventory = max(required_inventory, 0)
+
+    required_inventory_values.append(required_inventory)
+
+required_inventory_values = required_inventory_values[::-1]
+
+network_task8["Required_Starting_Inventory"] = required_inventory_values
+
+required_preproduction_inventory = (
+    network_task8["Required_Starting_Inventory"].iloc[0]
+)
+
+print(
+    "Required inventory at start of horizon:",
+    required_preproduction_inventory
+)
+
+preproduction_days = (
+    required_preproduction_inventory / avg_demand
+)
+
+print("Pre-production days:", preproduction_days)
+
+preproduction_days = math.ceil(preproduction_days)
+
+network_task8['preprod_smooth_inv'] = np.nan
+
+inv = required_preproduction_inventory
+
+for i in range(len(network_task8)):
+
+    current_index = network_task8.index[i]
+
+    inv = inv + avg_demand - network_task8.loc[current_index, 'Mean_Demand_x']
+
+    network_task8.loc[current_index, 'preprod_smooth_inv'] = inv
+
+print(
+    "Minimum inventory:",
+    network_task8["preprod_smooth_inv"].min()
+)
+
+print(
+    "Maximum inventory:",
+    network_task8["preprod_smooth_inv"].max()
+)
+
+
+
+# segment smoothing per period - group by week
+
+week_demand = network_task8.groupby("Week")['Mean_Demand_x'].mean().reset_index()
+
+
+
+# we will divide the period into 5 segments gotten from the view of the graph
+
+network_task8["segment"] = np.nan
+
+network_task8.loc[
+    network_task8["Week"].between(1, 21),
+    "segment"
+] = 1
+
+network_task8.loc[
+    network_task8["Week"].between(22, 27),
+    "segment"
+] = 2
+
+network_task8.loc[
+    network_task8["Week"].between(28, 44),
+    "segment"
+] = 3
+
+network_task8.loc[
+    network_task8["Week"].between(45, 48),
+    "segment"
+] = 4
+
+network_task8.loc[
+    network_task8["Week"].between(49, 52),
+    "segment"
+] = 5
+
+prod_seg = (
+    network_task8
+    .groupby("segment")["Mean_Demand_x"]
+    .mean()
+)
+
+#if initial inventory is 0
+
+inv_segmented = 0
+
+network_task8['prod_seg'] = network_task8['segment'].map(prod_seg)
+
+network_task8['inv_seg'] = np.nan
+
+for i in range(len(network_task8)):
+
+    current_index = network_task8.index[i]
+
+    inv_segmented = (
+        inv_segmented
+        + network_task8.loc[
+            current_index,
+            'prod_seg'
+        ]
+        - network_task8.loc[
+            current_index,
+            "Mean_Demand_x"
+        ]
+    )
+
+    network_task8.loc[
+        current_index,
+        'inv_seg'
+    ] = inv_segmented
+
+print(
+    network_task8[
+        [
+            "Time",
+            "Week",
+            "Mean_Demand_x",
+            "segment",
+            "prod_seg",
+            "inv_seg"
+        ]
+    ].head(20)
+)
+
+print(
+    "Maximum AF production:",
+    network_task8["prod_seg"].max()
+)
+
+print(
+    "Minimum DC inventory:",
+    network_task8["inv_seg"].min()
+)
+
+print(
+    "Maximum DC inventory:",
+    network_task8["inv_seg"].max()
+)
+
+
+if network_task8["inv_seg"].min() < 0:
+    print("There is backlog.")
+else:
+    print("There is no backlog.")
+
+# if initial invetory is different from cero
+
+inventory_t0 = network_task8.loc[network_task8["Time"] == network_task8["Time"].min(), "DC_Inventory"].iloc[0]
+
+inv_segmented = inventory_t0
+
+network_task8['prod_seg'] = network_task8['segment'].map(prod_seg)
+
+network_task8['inv_seg'] = np.nan
+
+for i in range(len(network_task8)):
+
+    current_index = network_task8.index[i]
+
+    inv_segmented = (
+        inv_segmented
+        + network_task8.loc[
+            current_index,
+            'prod_seg'
+        ]
+        - network_task8.loc[
+            current_index,
+            "Mean_Demand_x"
+        ]
+    )
+
+    network_task8.loc[
+        current_index,
+        'inv_seg'
+    ] = inv_segmented
+
+print(
+    network_task8[
+        [
+            "Time",
+            "Week",
+            "Mean_Demand_x",
+            "segment",
+            "prod_seg",
+            "inv_seg"
+        ]
+    ].head(20)
+)
+
+print(
+    "Maximum AF production:",
+    network_task8["prod_seg"].max()
+)
+
+print(
+    "Minimum DC inventory:",
+    network_task8["inv_seg"].min()
+)
+
+print(
+    "Maximum DC inventory:",
+    network_task8["inv_seg"].max()
+)
+
+backlog_days = network_task8[
+    network_task8["inv_seg"] < 0
+]
+
+print(
+    backlog_days[
+        [
+            "Time",
+            "Week",
+            "Mean_Demand_x",
+            "segment",
+            "prod_seg",
+            "inv_seg"
+        ]
+    ]
+)
+
+
+if network_task8["inv_seg"].min() < 0:
+    print("There is backlog.")
+else:
+    print("There is no backlog.")
+
+
+
+print("\n----")
+print("\nTask 8 for 1 FCs")
+print("\n----")
+
+grouped_demand = demand.groupby(["Week", "Day"])["Mean_Demand"].sum().reset_index()
+
+grouped_demand["Time"] = (grouped_demand["Week"] - 1) * 7 + (grouped_demand["Day"] - 1)
+
+#print(grouped_demand.head(10))
+
+network_task8 = network_daily.copy()
+
+network_task8 = network_task8.merge(
+    grouped_demand,
+    on=["Time", "Week", "Day"],
+    how="left"
+)
+
+network_task8["DC_Inventory"] = dc_1FC
+
+network_task8 = network_task8.drop(
+    columns=['Demand_42d','Sigma_42d','Demand_4w','Sigma_4w','Network_Stock_4w_50','Network_Stock_4w_68',
+        'Network_Stock_4w_95','Network_Stock_4w_99','Demand_6w','Sigma_6w','Network_Stock_6w_50',
+        'Network_Stock_6w_68','Network_Stock_6w_95','Network_Stock_6w_99','Demand_8w',
+        'Sigma_8w','Network_Stock_8w_50','Network_Stock_8w_68','Network_Stock_8w_95',
+        'Network_Stock_8w_99','Mean_Demand_y'
+    ],
+    errors='ignore'
+)
+
+print(network_task8.columns.tolist())
+
+network_task8 = network_task8.sort_values("Time")
+
+network_task8['DC_delta'] = network_task8['DC_Inventory'] - network_task8['DC_Inventory'].shift(1)
+
+inventory_t0 = network_task8.loc[network_task8["Time"] == network_task8["Time"].min(), "DC_Inventory"].iloc[0]
+
+network_task8.loc[
+    network_task8["Time"] == network_task8["Time"].min(),
+    "DC_delta"
+] = (
+    network_task8.loc[
+        network_task8["Time"] == network_task8["Time"].min(),
+        "DC_Inventory"
+    ].iloc[0]
+    - inventory_t0
+)
+
+network_task8['Production'] = network_task8['Mean_Demand_x'] + network_task8['DC_delta']
+
+network_task8['DC_calculated_inventory'] = np.nan
+
+dc_day1 = (inventory_t0 + network_task8.loc[
+        network_task8["Time"] == network_task8["Time"].min(), "Production"].iloc[0] - network_task8.loc[
+        network_task8["Time"] == network_task8["Time"].min(), "Mean_Demand_x"].iloc[0])
+
+network_task8.loc[network_task8['Time'] == network_task8['Time'].min(), 'DC_calculated_inventory'] = dc_day1
+
+for i in range (1, len(network_task8)):
+
+    current_index = network_task8.index[i]
+    previous_index = network_task8.index[i-1]
+
+    inventory = (
+        network_task8.loc[previous_index, "DC_calculated_inventory"]
+    + network_task8.loc[current_index, "Production"]
+    - network_task8.loc[current_index, "Mean_Demand_x"])
+
+    network_task8.loc[current_index, 'DC_calculated_inventory'] = inventory
+
+
+# smoothing where we will assume that the initial inventory at the DC is the inventory target
+
+avg_demand = network_task8['Mean_Demand_x'].mean()
+
+network_task8['smooth_production'] = avg_demand
+
+network_task8['smooth_inv'] = np.nan
+
+sm_inv = (inventory_t0 + network_task8.loc[network_task8["Time"] == network_task8["Time"].min(), "smooth_production"].iloc[0]
+    - network_task8.loc[network_task8["Time"] == network_task8["Time"].min(), "Mean_Demand_x"].iloc[0])
+
+network_task8.loc[network_task8["Time"] == network_task8["Time"].min(), 'smooth_inv'] = sm_inv
+
+for i in range(1, len(network_task8)):
+
+    current_index = network_task8.index[i]
+    previous_index = network_task8.index[i-1]
+
+    sm_inv = (network_task8.loc[previous_index, "smooth_inv"]
+    + network_task8.loc[current_index, "smooth_production"]
+    - network_task8.loc[current_index, "Mean_Demand_x"]
+)
+
+    network_task8.loc[current_index, 'smooth_inv'] = sm_inv
+
+backlog = network_task8['smooth_inv'].min()
+
+print(
+    "Minimum inventory:",
+    network_task8["smooth_inv"].min()
+)
+
+if backlog < 0:
+    print(f"There's backlog of {backlog}")
+else:
+    print("There's no backlog")
+
+print("Initial inventory:", inventory_t0)
+print("Average production:", avg_demand)
+print("Minimum inventory:", network_task8["smooth_inv"].min())
+print("Maximum inventory:", network_task8["smooth_inv"].max())
+
+
+print(
+    network_task8[
+        [
+            "Time",
+            "Mean_Demand_x",
+            "smooth_production",
+            "smooth_inv"
+        ]
+    ].head(20)
+)
+# Constant production
+avg_demand = network_task8["Mean_Demand_x"].mean()
+
+network_task8["smooth_production"] = avg_demand
+
+# Initialize inventory
+network_task8["smooth_inv"] = np.nan
+
+# Initial inventory
+inventory = inventory_t0
+
+# Calculate inventory day by day
+for i in range(len(network_task8)):
+
+    current_index = network_task8.index[i]
+
+    inventory = (
+        inventory
+        + network_task8.loc[current_index, "smooth_production"]
+        - network_task8.loc[current_index, "Mean_Demand_x"]
+    )
+
+    network_task8.loc[
+        current_index,
+        "smooth_inv"
+    ] = inventory
+
+# there is no backlog, too much inventory
+
+# now we will try with smoothing no initial invetory
+
+avg_demand = network_task8['Mean_Demand_x'].mean()
+
+network_task8['smooth_production'] = avg_demand
+
+network_task8['smooth_inv'] = np.nan
+
+network_task8.loc[network_task8["Time"] == network_task8["Time"].min(), 'smooth_inv'] = 0
+
+for i in range(1, len(network_task8)):
+
+    current_index = network_task8.index[i]
+    previous_index = network_task8.index[i-1]
+
+    sm_inv = (network_task8.loc[previous_index, "smooth_inv"]
+    + network_task8.loc[current_index, "smooth_production"]
+    - network_task8.loc[current_index, "Mean_Demand_x"]
+)
+
+    network_task8.loc[current_index, 'smooth_inv'] = sm_inv
+
+backlog = network_task8['smooth_inv'].min()
+
+print(
+    "Minimum inventory:",
+    network_task8["smooth_inv"].min()
+)
+
+if backlog < 0:
+    print(f"There's backlog of {backlog}")
+else:
+    print("There's no backlog")
+
+print("Initial inventory:", inventory_t0)
+print("Average production:", avg_demand)
+print("Minimum inventory:", network_task8["smooth_inv"].min())
+print("Maximum inventory:", network_task8["smooth_inv"].max())
+
+
+print(
+    network_task8[
+        [
+            "Time",
+            "Mean_Demand_x",
+            "smooth_production",
+            "smooth_inv"
+        ]
+    ].head(20)
+)
+# Constant production
+avg_demand = network_task8["Mean_Demand_x"].mean()
+
+network_task8["smooth_production"] = avg_demand
+
+# Initialize inventory
+network_task8["smooth_inv"] = np.nan
+
+# Initial inventory
+inventory = inventory_t0
+
+# Calculate inventory day by day
+for i in range(len(network_task8)):
+
+    current_index = network_task8.index[i]
+
+    inventory = (
+        inventory
+        + network_task8.loc[current_index, "smooth_production"]
+        - network_task8.loc[current_index, "Mean_Demand_x"]
+    )
+
+    network_task8.loc[
+        current_index,
+        "smooth_inv"
+    ] = inventory
+
+
+# there's backlog
+
+# smoothing with pre-production
+
+required_inventory = 0
+
+required_inventory_values = []
+
+for i in range(len(network_task8)-1, -1, -1):
+
+    current_index = network_task8.index[i]
+
+    required_inventory = (
+        required_inventory
+        + network_task8.loc[current_index, "Mean_Demand_x"]
+        - avg_demand
+    )
+
+    required_inventory = max(required_inventory, 0)
+
+    required_inventory_values.append(required_inventory)
+
+required_inventory_values = required_inventory_values[::-1]
+
+network_task8["Required_Starting_Inventory"] = required_inventory_values
+
+required_preproduction_inventory = (
+    network_task8["Required_Starting_Inventory"].iloc[0]
+)
+
+print(
+    "Required inventory at start of horizon:",
+    required_preproduction_inventory
+)
+
+preproduction_days = (
+    required_preproduction_inventory / avg_demand
+)
+
+print("Pre-production days:", preproduction_days)
+
+preproduction_days = math.ceil(preproduction_days)
+
+network_task8['preprod_smooth_inv'] = np.nan
+
+inv = required_preproduction_inventory
+
+for i in range(len(network_task8)):
+
+    current_index = network_task8.index[i]
+
+    inv = inv + avg_demand - network_task8.loc[current_index, 'Mean_Demand_x']
+
+    network_task8.loc[current_index, 'preprod_smooth_inv'] = inv
+
+print(
+    "Minimum inventory:",
+    network_task8["preprod_smooth_inv"].min()
+)
+
+print(
+    "Maximum inventory:",
+    network_task8["preprod_smooth_inv"].max()
+)
+
+
+
+# segment smoothing per period - group by week
+
+week_demand = network_task8.groupby("Week")['Mean_Demand_x'].mean().reset_index()
+
+
+
+# we will divide the period into 5 segments gotten from the view of the graph
+
+network_task8["segment"] = np.nan
+
+network_task8.loc[
+    network_task8["Week"].between(1, 21),
+    "segment"
+] = 1
+
+network_task8.loc[
+    network_task8["Week"].between(22, 27),
+    "segment"
+] = 2
+
+network_task8.loc[
+    network_task8["Week"].between(28, 44),
+    "segment"
+] = 3
+
+network_task8.loc[
+    network_task8["Week"].between(45, 48),
+    "segment"
+] = 4
+
+network_task8.loc[
+    network_task8["Week"].between(49, 52),
+    "segment"
+] = 5
+
+prod_seg = (
+    network_task8
+    .groupby("segment")["Mean_Demand_x"]
+    .mean()
+)
+
+#if initial inventory is 0
+
+inv_segmented = 0
+
+network_task8['prod_seg'] = network_task8['segment'].map(prod_seg)
+
+network_task8['inv_seg'] = np.nan
+
+for i in range(len(network_task8)):
+
+    current_index = network_task8.index[i]
+
+    inv_segmented = (
+        inv_segmented
+        + network_task8.loc[
+            current_index,
+            'prod_seg'
+        ]
+        - network_task8.loc[
+            current_index,
+            "Mean_Demand_x"
+        ]
+    )
+
+    network_task8.loc[
+        current_index,
+        'inv_seg'
+    ] = inv_segmented
+
+print(
+    network_task8[
+        [
+            "Time",
+            "Week",
+            "Mean_Demand_x",
+            "segment",
+            "prod_seg",
+            "inv_seg"
+        ]
+    ].head(20)
+)
+
+print(
+    "Maximum AF production:",
+    network_task8["prod_seg"].max()
+)
+
+print(
+    "Minimum DC inventory:",
+    network_task8["inv_seg"].min()
+)
+
+print(
+    "Maximum DC inventory:",
+    network_task8["inv_seg"].max()
+)
+
+
+if network_task8["inv_seg"].min() < 0:
+    print("There is backlog.")
+else:
+    print("There is no backlog.")
+
+# if initial invetory is different from cero
+
+inventory_t0 = network_task8.loc[network_task8["Time"] == network_task8["Time"].min(), "DC_Inventory"].iloc[0]
+
+inv_segmented = inventory_t0
+
+network_task8['prod_seg'] = network_task8['segment'].map(prod_seg)
+
+network_task8['inv_seg'] = np.nan
+
+for i in range(len(network_task8)):
+
+    current_index = network_task8.index[i]
+
+    inv_segmented = (
+        inv_segmented
+        + network_task8.loc[
+            current_index,
+            'prod_seg'
+        ]
+        - network_task8.loc[
+            current_index,
+            "Mean_Demand_x"
+        ]
+    )
+
+    network_task8.loc[
+        current_index,
+        'inv_seg'
+    ] = inv_segmented
+
+print(
+    network_task8[
+        [
+            "Time",
+            "Week",
+            "Mean_Demand_x",
+            "segment",
+            "prod_seg",
+            "inv_seg"
+        ]
+    ].head(20)
+)
+
+print(
+    "Maximum AF production:",
+    network_task8["prod_seg"].max()
+)
+
+print(
+    "Minimum DC inventory:",
+    network_task8["inv_seg"].min()
+)
+
+print(
+    "Maximum DC inventory:",
+    network_task8["inv_seg"].max()
+)
+
+backlog_days = network_task8[
+    network_task8["inv_seg"] < 0
+]
+
+print(
+    backlog_days[
+        [
+            "Time",
+            "Week",
+            "Mean_Demand_x",
+            "segment",
+            "prod_seg",
+            "inv_seg"
+        ]
+    ]
+)
 
 if network_task8["inv_seg"].min() < 0:
     print("There is backlog.")
