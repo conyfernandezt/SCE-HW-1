@@ -257,7 +257,7 @@ def main():
     for fc in DISTANCE_COLUMNS_15FC:
         data = fc_daily[fc_daily.closest_location == fc]
         result = resource_profile(simulate_fc(fc, data.Mean_Demand.to_numpy(), data.Sigma.to_numpy()))
-        result.to_csv(output / f"fc_{fc}_daily.csv", index=False)
+        result.to_excel(output / f"fc_{fc}_daily.xlsx", index=False)
         frames[(fc, "FC")] = result
         outbound += result.replen_qty.to_numpy()
         fc_targets += result.target_21d.to_numpy()
@@ -285,7 +285,7 @@ def main():
         dc["storage_with_extra_initial_stock"] = feasible.storage_required
         dc["Task7_DC_target"] = dc_target
         dc = resource_profile(dc)
-        dc.to_csv(output / f"dc_{name.replace(' ', '_')}_daily.csv", index=False)
+        dc.to_excel(output / f"dc_{name.replace(' ', '_')}_daily.xlsx", index=False)
         frames[("DC-GA-303", name)] = dc
         summaries.append(resource_summary("DC-GA-303", name, dc))
         no_initial = dc_inventory_profile(production, means, 0)
@@ -299,8 +299,8 @@ def main():
                               "batch_shipments_backlog_days": (dc.backlog > 1e-8).sum(),
                               "batch_shipments_extra_initial_stock": extra_initial})
     summary = pd.DataFrame(summaries)
-    summary.to_csv(output / "handling_summary.csv", index=False)
-    pd.DataFrame(dc_comparison).to_csv(output / "production_comparison.csv", index=False)
+    summary.to_excel(output / "handling_summary.xlsx", index=False)
+    pd.DataFrame(dc_comparison).to_excel(output / "production_comparison.xlsx", index=False)
     sensitivity = []
     for label, (q, r, e) in {
         "Baseline": (Q, R, E), "Lower quality": (.90, R, E),
@@ -314,8 +314,8 @@ def main():
             row["N_change"] = row["N"] - baseline.N
             row["capacity_cost_change"] = row["capacity_cost"] - baseline.capacity_cost
             sensitivity.append(row)
-    pd.DataFrame(sensitivity).to_csv(output / "sensitivity.csv", index=False)
-    pd.DataFrame(storage).rename_axis("Time").to_csv(output / "storage_inventory_profiles.csv")
+    pd.DataFrame(sensitivity).to_excel(output / "sensitivity.xlsx", index=False)
+    pd.DataFrame(storage).rename_axis("Time").to_excel(output / "storage_inventory_profiles.xlsx")
     # A feasible, fully costed alternative using only rates supplied in Appendix 1.
     # This is an upper bound on optimal cost, not a claimed optimal tier split.
     pd.DataFrame([
@@ -326,17 +326,17 @@ def main():
          "total_storage_cost": float(np.max(inventory)) *
              (HORIZON * BASE_STORAGE_RATE + BASE_STORAGE_SETUP)}
         for label, inventory in storage.items()
-    ]).to_csv(output / "storage_all_base_alternative.csv", index=False)
+    ]).to_excel(output / "storage_all_base_alternative.xlsx", index=False)
     storage_status = "Storage tier optimum pending seasonal/spot rates and minimum lease duration."
     if all(x is not None for x in storage_inputs):
         storage_summaries = []
         for label, inventory in storage.items():
             daily, contracts, row = optimize_storage(inventory, *storage_inputs)
-            daily.to_csv(output / f"storage_{label}_daily.csv", index=False)
-            contracts.to_csv(output / f"storage_{label}_contracts.csv", index=False)
+            daily.to_excel(output / f"storage_{label}_daily.xlsx", index=False)
+            contracts.to_excel(output / f"storage_{label}_contracts.xlsx", index=False)
             row["profile"] = label
             storage_summaries.append(row)
-        pd.DataFrame(storage_summaries).to_csv(output / "storage_tier_summary.csv", index=False)
+        pd.DataFrame(storage_summaries).to_excel(output / "storage_tier_summary.xlsx", index=False)
     report = (__doc__ + "\n\n" + storage_status + "\n\n"
             )
     print(summary[["facility", "strategy", "peak_throughput", "N", "residual_hours", "capacity_cost"]].round(2).to_string(index=False))
