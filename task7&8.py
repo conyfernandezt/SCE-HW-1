@@ -356,6 +356,8 @@ print(
     daily_fc_total_1FC["FC_Inventory_1FC"].max()
 )
 
+# 6 weeks 99%
+
 
 network_daily = (
     demand
@@ -727,7 +729,8 @@ network_task8 = network_task8.drop(
     errors='ignore'
 )
 
-print(network_task8.columns.tolist())
+# print(network_task8.columns.tolist())
+
 
 network_task8 = network_task8.sort_values("Time")
 
@@ -796,6 +799,11 @@ for i in range(1, len(network_task8)):
 
 backlog = network_task8['smooth_inv'].min()
 
+print("----")
+print("15 FCs considering inventory in t0 to be enough for demand of the first period ")
+print("Smoothing without pre-production")
+print("----")
+
 print(
     "Minimum inventory:",
     network_task8["smooth_inv"].min()
@@ -852,6 +860,11 @@ for i in range(len(network_task8)):
 # there is no backlog, too much inventory
 
 # now we will try with smoothing no initial invetory
+
+print("----")
+print("15 FCs considering no initial inventory")
+print("Smoothing without pre-production")
+print("----")
 
 avg_demand = network_task8['Mean_Demand_x'].mean()
 
@@ -932,6 +945,12 @@ for i in range(len(network_task8)):
 # there's backlog
 
 # smoothing with pre-production
+
+print("----")
+print("15 FCs considering no initial inventory")
+print("Smoothing with pre-production")
+print("----")
+
 
 required_inventory = 0
 
@@ -1058,6 +1077,11 @@ prod_seg = (
     .mean()
 )
 
+print("----")
+print("15 FCs considering no initial inventory")
+print("Segmented smoothing")
+print("----")
+
 #if initial inventory is 0
 
 inv_segmented = 0
@@ -1122,6 +1146,11 @@ else:
     print("There is no backlog.")
 
 # if initial invetory is different from cero
+
+print("----")
+print("15 FCs considering initial inventory")
+print("Segmented smoothing")
+print("----")
 
 inventory_t0 = network_task8.loc[network_task8["Time"] == network_task8["Time"].min(), "DC_Inventory"].iloc[0]
 
@@ -1303,6 +1332,11 @@ for i in range(1, len(network_task8)):
 
 backlog = network_task8['smooth_inv'].min()
 
+print("----")
+print("4 FCs considering inventory in t0 to be enough for demand of the first period")
+print("Smoothing without pre-production")
+print("----")
+
 print(
     "Minimum inventory:",
     network_task8["smooth_inv"].min()
@@ -1356,9 +1390,16 @@ for i in range(len(network_task8)):
         "smooth_inv"
     ] = inventory
 
+    
+
 # there is no backlog, too much inventory
 
 # now we will try with smoothing no initial invetory
+
+print("----")
+print("4 FCs considering no initial inventory")
+print("Smoothing without pre-production")
+print("----")
 
 avg_demand = network_task8['Mean_Demand_x'].mean()
 
@@ -1439,6 +1480,11 @@ for i in range(len(network_task8)):
 # there's backlog
 
 # smoothing with pre-production
+
+print("----")
+print("4 FCs considering no initial inventory")
+print("Smoothing with pre-production")
+print("----")
 
 required_inventory = 0
 
@@ -1546,6 +1592,11 @@ prod_seg = (
 
 #if initial inventory is 0
 
+print("----")
+print("4 FCs considering no initial inventory")
+print("Segmented smoothing")
+print("----")
+
 inv_segmented = 0
 
 network_task8['prod_seg'] = network_task8['segment'].map(prod_seg)
@@ -1608,6 +1659,11 @@ else:
     print("There is no backlog.")
 
 # if initial invetory is different from cero
+
+print("----")
+print("4 FCs considering inventory in t0 is enough to cover initial demand")
+print("Segmented smoothing")
+print("----")
 
 inventory_t0 = network_task8.loc[network_task8["Time"] == network_task8["Time"].min(), "DC_Inventory"].iloc[0]
 
@@ -1790,6 +1846,11 @@ for i in range(1, len(network_task8)):
 
 backlog = network_task8['smooth_inv'].min()
 
+print("----")
+print("1 FC considering inventory in t0 to be enough for demand of the first period")
+print("Smoothing without pre-production")
+print("----")
+
 print(
     "Minimum inventory:",
     network_task8["smooth_inv"].min()
@@ -1846,6 +1907,11 @@ for i in range(len(network_task8)):
 # there is no backlog, too much inventory
 
 # now we will try with smoothing no initial invetory
+
+print("----")
+print("1 FC considering no initial inventory")
+print("Smoothing without pre-production")
+print("----")
 
 avg_demand = network_task8['Mean_Demand_x'].mean()
 
@@ -1926,6 +1992,11 @@ for i in range(len(network_task8)):
 # there's backlog
 
 # smoothing with pre-production
+
+print("----")
+print("1 FC considering no initial inventory")
+print("Smoothing with pre-production")
+print("----")
 
 required_inventory = 0
 
@@ -2033,6 +2104,11 @@ prod_seg = (
 
 #if initial inventory is 0
 
+print("----")
+print("1 FC considering no initial inventory")
+print("Segmented Smoothing")
+print("----")
+
 inv_segmented = 0
 
 network_task8['prod_seg'] = network_task8['segment'].map(prod_seg)
@@ -2095,6 +2171,12 @@ else:
     print("There is no backlog.")
 
 # if initial invetory is different from cero
+
+
+print("----")
+print("1 FC considering initial inventory is enough to cober initial demand")
+print("Segmented Smoothing")
+print("----")
 
 inventory_t0 = network_task8.loc[network_task8["Time"] == network_task8["Time"].min(), "DC_Inventory"].iloc[0]
 
