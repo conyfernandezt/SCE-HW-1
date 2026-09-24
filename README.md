@@ -1,19 +1,25 @@
-// From assignment specification: "describes the logic and data flow of your computation files and code. Please be specific, a reader should be able to reproduce your results from it alone." //
-
 # General instructions
 
 The purpose of this document is to explain the logic and data flow of the case work.
 
-Throughout the whole project there were some basic libraries used:
-1. Pandas
-2. Numpy
-3. Matplotlib
-4. Pathlib
+## Requirements
 
+- Python 3.x
+- pandas
+- numpy
+- matplotlib
+
+## Installation
+
+Clone the repository:
+`git clone github.com/conyfernandezt/SCE-HW-1/`
+
+Install the required packages:
+`pip install pandas numpy matplotlib`
 
 ## Task 1
 
-For task we had to compute the estimated overall market demand, considering a 1 year planning horizon. Given the hypothesis on the case work, there were a couple of assumptions that had to be considered to compute the overall market demand:
+For task 1 we had to compute the estimated overall market demand, considering a 1 year planning horizon. Given the hypothesis on the case work, there were a couple of assumptions that had to be considered to compute the overall market demand:
 1. Current US market = 2_000_000
 2. Market growth = 0.04
 3. Current Tsukumo share = 0.036
