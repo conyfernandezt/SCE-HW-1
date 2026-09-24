@@ -126,3 +126,15 @@ The code logic:
 11. Calculates inventory/backlog resulting from each strategy
 12. Calculates resources requirements for the DC
 13. With all these results, a report is printed for sensitivity analysis
+
+## Task 10
+1. Importing task 3 results, specifically the dataframes that already contain the closest FC for every ZIP3
+2. Taking demand from task 2 and merging it to the closest-FC information from Task 3
+3. Demand is aggregated by FC and day
+4. Calculates the average and standard deviation of FC demand
+5. Calculates the replenishment interval
+6. Defines the RAD for each FC
+7. Calculates the forecast uncertainty buffer (how many additional days of autonomy do I need as protection)
+8. Adds the shipment time, the FC should have enough autonomy to cover the replenishment lead time plus an additional uncertainty buffer
+9. Code prints final report with results from replenishment interval, autonomy threshold, among others
+
