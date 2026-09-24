@@ -200,9 +200,6 @@ def plot_map(gdf, title, fc_list):
             # Create a color from the FC's base color
             base_color = fc_base_colors[fc]
 
-            # Make different shades
-            # i = 0 → darkest
-            # i = 7 → lightest
 
             import matplotlib.colors as mcolors
 
