@@ -88,6 +88,17 @@ The code logic:
 
 ## Task 6
 1. The outputs and dataframes from task 5 were reused
+2. It imports task 5 using: import task5 as task5
+3.For each market and Order to Date (OTD) option, units sold equal potential demand x demand conversion rate
+4.revenue = units sold x 3000
+5.shipping cost, cost of goods sold and gross operating cost is derived from task 5 and depends on FC network, distance bucket,OTD promise and converted demand
+6. Net revenue calculated by revenue - shipping cost
+7. The analysis was performed for 1-FC, 4-FC and 15-FC. For each network, np.argmax(gross_operating_profit_matrix, axis=1) identifies the most profitable OTD promise for each market.
+8. Selected primary, secondary and tertiary results are summed to calculate metrics such as total revenue, shipping cost, net revenue and GOP.
+9.The optimized solution is compared with 1-day delivery and 5+ day delivery benchmark cases.
+10. Final discussion compares higher converstion from faster delivery against lower shipping cost.
+11. preferred OTD policy is combination of market specific promises that produces highest gross operating profit.
+
 
 
 ## Task 7
