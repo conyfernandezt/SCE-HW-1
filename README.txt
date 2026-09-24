@@ -104,3 +104,24 @@ The code logic:
 ## Task 7
 
 
+## Task 8
+
+## Task 9
+1. The FC networks are defined
+2. ZIP3-level demand from Task 2 is assigned to every ZIP3 to the closest FC in the selected network
+3. Demand is aggregated by FC and day, while also creating a network-wide daily demand
+4. Demand required to cover a 21 days at 99% robustness, and then the autonomy is tested considering that given the current inventory, how many robust days can be covered
+5. FCs operations are simulated day by day:
+    - FC starts with enough inventory for the 21-day robust target
+    - It receives shipments, so if something was ordered previously and its lead time has elapsed, it arrives
+    - It calculated inventory (inventory physically at the FC + inventory currently in transit - backlog)
+    - Calculates autonomy, how many robust days of demand the FC can cover
+    - Decides whether to order: if autonomy falls below 14 days, order immediately or every 7 days, check whether autonomy is below the 21-day target
+6. If order/replenishment is needed, quantity has to be determined so it orders enough to restore the FC to the 21-day target, but never less than 27 units
+7. Demand is served
+8. Given the amount flowing through the facility, the code determines how many resources/workers are required
+9. Calculate the DC's 6-week target
+10. Calculates the three production strategies: smoothing without pre-production, smoothing with pre-production and segmented smoothing
+11. Calculates inventory/backlog resulting from each strategy
+12. Calculates resources requirements for the DC
+13. With all these results, a report is printed for sensitivity analysis
