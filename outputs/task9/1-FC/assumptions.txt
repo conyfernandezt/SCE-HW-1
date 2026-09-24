@@ -1,0 +1,7 @@
+Network: 1-FC
+FCs: GA-303
+
+Task 9: 1-FC, 4-FC, and 15-FC replenishment, handling resources, and storage contracting.
+
+Storage tier optimum pending seasonal/spot rates and minimum lease duration.
+

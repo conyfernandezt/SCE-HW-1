@@ -1,0 +1,7 @@
+Network: 4-FC
+FCs: GA-303, NY-134, TX-799, UT-841
+
+Task 9: 1-FC, 4-FC, and 15-FC replenishment, handling resources, and storage contracting.
+
+Storage tier optimum pending seasonal/spot rates and minimum lease duration.
+

@@ -1,0 +1,7 @@
+Network: 15-FC
+FCs: GA-303, UT-841, AZ-852, CA-900, CA-945, CO-802, FL-331, IL-606, MA-021, MI-481, NC-275, NJ-070, TX-750, TX-770, WA-980
+
+Task 9: 1-FC, 4-FC, and 15-FC replenishment, handling resources, and storage contracting.
+
+Storage tier optimum pending seasonal/spot rates and minimum lease duration.
+

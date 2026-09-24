@@ -1,4 +1,4 @@
-"""Task 9: 15-FC replenishment, handling resources, and storage contracting."""
+"""Task 9: 1-FC, 4-FC, and 15-FC replenishment, handling resources, and storage contracting."""
 
 
 import argparse
@@ -26,6 +26,12 @@ DISTANCE_COLUMNS_15FC = [
     "GA-303", "UT-841", "AZ-852", "CA-900", "CA-945", "CO-802", "FL-331",
     "IL-606", "MA-021", "MI-481", "NC-275", "NJ-070", "TX-750", "TX-770", "WA-980",
 ]
+FC_CONFIGS = {
+    "1-FC": ["GA-303"],
+    "4-FC": ["GA-303", "NY-134", "TX-799", "UT-841"],
+    "15-FC": DISTANCE_COLUMNS_15FC,
+}
+
 UNIT_HANDLING_TIME_HR = 12 / 60
 Q, A, R, E = 0.98, 0.90, 0.95, 0.90
 SHIFT_HOURS = 8
@@ -37,10 +43,12 @@ BASE_STORAGE_RATE = 6.60
 BASE_STORAGE_SETUP = 46.20
 
 
-def load_fc_daily():
+def load_fc_daily(network="15-FC"):
+    """Reassign ZIP3 demand to the nearest FC in the selected network."""
+    fc_list = FC_CONFIGS[network]
     demand = pd.read_csv(DATA_DIR / "task2_demand_results.csv")
     distances = pd.read_csv(DATA_DIR / "Assignment/fc_zip3_distance.csv")
-    distances["closest_location"] = distances[DISTANCE_COLUMNS_15FC].idxmin(axis=1)
+    distances["closest_location"] = distances[fc_list].idxmin(axis=1)
     demand = demand.merge(distances[["ZIP3", "closest_location"]], on="ZIP3",
                           how="left", validate="many_to_one")
     if demand["closest_location"].isna().any():
@@ -59,7 +67,7 @@ def load_fc_daily():
         return result.sort_values("Time")
     fc_daily = aggregate(["Week", "Day", "closest_location"])
     network_daily = aggregate(["Week", "Day"])
-    for fc in DISTANCE_COLUMNS_15FC:
+    for fc in FC_CONFIGS[network]:
         times = fc_daily.loc[fc_daily.closest_location == fc, "Time"].to_numpy()
         if not np.array_equal(times, np.arange(HORIZON)):
             raise ValueError(f"{fc} must have exactly 364 consecutive daily observations.")
@@ -238,6 +246,8 @@ def optimize_storage(inventory, seasonal_rate, spot_rate, min_weeks):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--network", choices=["all", *FC_CONFIGS], default="all",
+                        help="Network to run (default: all three networks).")
     parser.add_argument("--seasonal-rate", type=float)
     parser.add_argument("--spot-rate", type=float)
     parser.add_argument("--min-seasonal-weeks", type=int)
@@ -248,13 +258,20 @@ def main():
     if all(x is not None for x in storage_inputs):
         if min(args.seasonal_rate, args.spot_rate) <= 0 or not 1 <= args.min_seasonal_weeks <= 52:
             parser.error("Rates must be positive and lease duration between 1 and 52 weeks.")
-    output = DATA_DIR / "outputs/task9"
+    networks = list(FC_CONFIGS) if args.network == "all" else [args.network]
+    for network in networks:
+        run_network(network, storage_inputs)
+
+
+def run_network(network, storage_inputs):
+    """Write an independent set of workbooks for one FC network."""
+    output = DATA_DIR / "outputs/task9" / network
     output.mkdir(parents=True, exist_ok=True)
-    fc_daily, network_daily = load_fc_daily()
+    fc_daily, network_daily = load_fc_daily(network)
     frames, storage, summaries = {}, {}, []
     outbound = np.zeros(HORIZON)
     fc_targets = np.zeros(HORIZON)
-    for fc in DISTANCE_COLUMNS_15FC:
+    for fc in FC_CONFIGS[network]:
         data = fc_daily[fc_daily.closest_location == fc]
         result = resource_profile(simulate_fc(fc, data.Mean_Demand.to_numpy(), data.Sigma.to_numpy()))
         result.to_excel(output / f"fc_{fc}_daily.xlsx", index=False)
@@ -299,6 +316,7 @@ def main():
                               "batch_shipments_backlog_days": (dc.backlog > 1e-8).sum(),
                               "batch_shipments_extra_initial_stock": extra_initial})
     summary = pd.DataFrame(summaries)
+    summary.insert(0, "network", network)
     summary.to_excel(output / "handling_summary.xlsx", index=False)
     pd.DataFrame(dc_comparison).to_excel(output / "production_comparison.xlsx", index=False)
     sensitivity = []
@@ -309,6 +327,7 @@ def main():
     }.items():
         for (facility, strategy), frame in frames.items():
             row = resource_summary(facility, strategy, frame, q=q, r=r, e=e)
+            row["network"] = network
             row["scenario"] = label
             baseline = summary[(summary.facility == facility) & (summary.strategy == strategy)].iloc[0]
             row["N_change"] = row["N"] - baseline.N
@@ -337,8 +356,11 @@ def main():
             row["profile"] = label
             storage_summaries.append(row)
         pd.DataFrame(storage_summaries).to_excel(output / "storage_tier_summary.xlsx", index=False)
-    report = (__doc__ + "\n\n" + storage_status + "\n\n"
+        storage_status = "Storage tiers optimized for the supplied rates and lease duration."
+    report = (f"Network: {network}\nFCs: {', '.join(FC_CONFIGS[network])}\n\n" + __doc__ + "\n\n" + storage_status + "\n\n"
             )
+    (output / "assumptions.txt").write_text(report)
+    print(f"\n{network} network")
     print(summary[["facility", "strategy", "peak_throughput", "N", "residual_hours", "capacity_cost"]].round(2).to_string(index=False))
     print("\n" + storage_status)
     print(f"Results saved to {output}")
