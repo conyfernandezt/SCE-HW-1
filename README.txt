@@ -62,13 +62,34 @@ The code logic:
 6. For all FC configurations (FC, 4FCs and 15FCs) the demand share and the demand share by market type was calculated
 7. Distance buckets were created, and the  were assigned to each bucket depending on the FC configuration being evaluated
 8. For each FC configuration (FC, 4FCs and 15FCs), the demand share by market type and distance bucket was calculated
-9. For each FC configuration (FC, 4FCs and 15FCs) the ZIP3 were placed into their corresponding buckets
-10. 3 different graphs are generated, where each FC has a different color and the intensity of the color of the ZIP3 represents the distance to the FC. So a darker colors would mean they are in the closest buckets and as the color gets lighter, the ZIP3 would be part of the furthest bucket
 
 ## Task 4
 
 The code logic:
 1. The lists and dataframes used for task 3 were reused
-2. 
+2. For each FC configuration (FC, 4FCs and 15FCs) the ZIP3 were placed into their corresponding buckets
+3. 3 different graphs are generated, where each FC has a different color and the intensity of the color of the ZIP3 represents the distance to the FC. So a darker colors would mean they are in the closest buckets and as the color gets lighter, the ZIP3 would be part of the furthest bucket
+4. For the 4C configuration and the 15C configuration, a new column for the dataframes was added for the number of FCs that can serve the clusters
+5. For both configurations maps were plotted, where the clusters colored red where the ones with less counts and the green ones where the ones with the highest counts
+6. Using the same calculation for the eligible FCs, the proportion of demand that can only be served by a single FC was printed in a table
+7. For both FC configuration, to evaluate the demand distribution, first the number of eligible FCs was counted. If there is only one eligible FC, then 100% of the demand is assigned to that FC. If there is more than 1 FC, then 80% would be assigned to the closest, and the remining 20% distributed equally among the rest
+
+## Task 5
+
+1. The outputs and dataframes from task 3 were reused
+2. The demand for the different markets (primary, secondary and tertiary) were calculated from outputs from task 3 (manual input) multiplied times the Tsukumo demand
+3. The revenue for the 3 markets was calculated using the OTD demand conversion rates
+4. The demand share by bucket was calculared for all FC configurations
+5. Using the shipment costs information, the final cost per FC configuration, bucket and OTD, was calculated
+6. Subtracting the revenue matrix and the production cost matrix, the net revenue for each FC was obtained
+7. Gross operating cost was calculated using the net revenue previously computed and substracting 750 for each item sold
+8. Using all the previous data, a couple of plots were generated for:
+    - Gross operating profit by OTD for each market type for all FC configurations
+
+## Task 6
+1. The outputs and dataframes from task 5 were reused
+
+
+## Task 7
 
 
