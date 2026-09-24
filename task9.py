@@ -259,8 +259,12 @@ def main():
         if min(args.seasonal_rate, args.spot_rate) <= 0 or not 1 <= args.min_seasonal_weeks <= 52:
             parser.error("Rates must be positive and lease duration between 1 and 52 weeks.")
     networks = list(FC_CONFIGS) if args.network == "all" else [args.network]
+    replenishment_summaries = []
     for network in networks:
-        run_network(network, storage_inputs)
+        replenishment_summaries.append(run_network(network, storage_inputs))
+    if args.network == "all":
+        pd.concat(replenishment_summaries, ignore_index=True).to_excel(
+            DATA_DIR / "outputs/task9/replenishment_summary_all_networks.xlsx", index=False)
 
 
 def run_network(network, storage_inputs):
@@ -269,6 +273,7 @@ def run_network(network, storage_inputs):
     output.mkdir(parents=True, exist_ok=True)
     fc_daily, network_daily = load_fc_daily(network)
     frames, storage, summaries = {}, {}, []
+    replenishment_rows = []
     outbound = np.zeros(HORIZON)
     fc_targets = np.zeros(HORIZON)
     for fc in FC_CONFIGS[network]:
@@ -281,6 +286,22 @@ def run_network(network, storage_inputs):
         # The assignment asks for Task 7 target storage, separate from simulated stock.
         storage[f"FC_{fc}_Task7"] = result.target_21d.to_numpy()
         summaries.append(resource_summary(fc, "FC", result))
+        orders = result.replen_qty > 0
+        # Count orders whose target shortfall is below the minimum, rather
+        # than every 27-unit order (which might simply be rounded to 27).
+        shortfall = result.target_21d - result.inventory_position_before_order
+        floored = orders & (shortfall < MIN_ORDER)
+        order_count = int(orders.sum())
+        replenishment_rows.append({
+            "network": network, "FC": fc,
+            "review_interval_days": REVIEW_INTERVAL,
+            "minimum_autonomy_days": MIN_AUTONOMY_DAYS,
+            "total_orders": order_count, "floored_orders": int(floored.sum()),
+            "floor_frequency_pct": 100 * floored.sum() / order_count if order_count else 0.0,
+            "average_end_of_day_inventory_units": result.on_hand.mean(),
+        })
+    replenishment_summary = pd.DataFrame(replenishment_rows)
+    replenishment_summary.to_excel(output / "replenishment_summary.xlsx", index=False)
     strategies, dc_target = dc_production_strategies(network_daily, fc_targets)
     means = network_daily.Mean_Demand.to_numpy()
     storage["DC_Task7"] = dc_target
@@ -364,6 +385,7 @@ def run_network(network, storage_inputs):
     print(summary[["facility", "strategy", "peak_throughput", "N", "residual_hours", "capacity_cost"]].round(2).to_string(index=False))
     print("\n" + storage_status)
     print(f"Results saved to {output}")
+    return replenishment_summary
 
 
 if __name__ == "__main__":
