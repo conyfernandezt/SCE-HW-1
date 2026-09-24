@@ -65,13 +65,13 @@ stats_15FC = (
 # use mean to calculate replenishment interval for each FC
 # using 34 to "comfortably exceed" 10% FTL
 stats_1FC["replenishment_interval"] = np.ceil(
-    27 / stats_1FC["mean"]
+    34 / stats_1FC["mean"]
 ).astype(int)
 stats_4FC["replenishment_interval"] = np.ceil(
-    27 / stats_4FC["mean"]
+    34 / stats_4FC["mean"]
 ).astype(int)
 stats_15FC["replenishment_interval"] = np.ceil(
-    27 / stats_15FC["mean"]
+    34 / stats_15FC["mean"]
 ).astype(int)
 
 # replenishment shipment times in terms of RAD
@@ -147,51 +147,3 @@ print(results_4FC)
 results_15FC = stats_15FC.drop(columns=["mean", "std", "rad", "forecast_buffer_days"])
 results_15FC.rename(columns={"closest location": "FC"}, inplace=True)
 print(results_15FC)
-
-stats_1FC["robust_inventory_target_units"] = (
-    stats_1FC["mean"]
-    * stats_1FC["autonomy_threshold"]
-    + 2.33
-    * stats_1FC["std"]
-    * np.sqrt(stats_1FC["autonomy_threshold"])
-)
-
-stats_1FC["average_inventory"] = (
-    stats_1FC["robust_inventory_target_units"] - (
-        stats_1FC["mean"]
-        * stats_1FC["replenishment_interval"] / 2
-    )
-)
-print(stats_1FC)
-
-stats_4FC["robust_inventory_target_units"] = (
-    stats_4FC["mean"]
-    * stats_4FC["autonomy_threshold"]
-    + 2.33
-    * stats_4FC["std"]
-    * np.sqrt(stats_4FC["autonomy_threshold"])
-)
-
-stats_4FC["average_inventory"] = (
-    stats_4FC["robust_inventory_target_units"] - (
-        stats_4FC["mean"]
-        * stats_4FC["replenishment_interval"] / 2
-    )
-)
-print(stats_4FC)
-
-stats_15FC["robust_inventory_target_units"] = (
-    stats_15FC["mean"]
-    * stats_15FC["autonomy_threshold"]
-    + 2.33
-    * stats_15FC["std"]
-    * np.sqrt(stats_15FC["autonomy_threshold"])
-)
-
-stats_15FC["average_inventory"] = (
-    stats_15FC["robust_inventory_target_units"] - (
-        stats_15FC["mean"]
-        * stats_15FC["replenishment_interval"] / 2
-    )
-)
-print(stats_15FC)
