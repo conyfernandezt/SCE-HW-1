@@ -65,13 +65,13 @@ stats_15FC = (
 # use mean to calculate replenishment interval for each FC
 # using 34 to "comfortably exceed" 10% FTL
 stats_1FC["replenishment_interval"] = np.ceil(
-    34 / stats_1FC["mean"]
+    27 / stats_1FC["mean"]
 ).astype(int)
 stats_4FC["replenishment_interval"] = np.ceil(
-    34 / stats_4FC["mean"]
+    27 / stats_4FC["mean"]
 ).astype(int)
 stats_15FC["replenishment_interval"] = np.ceil(
-    34 / stats_15FC["mean"]
+    27 / stats_15FC["mean"]
 ).astype(int)
 
 # replenishment shipment times in terms of RAD
@@ -147,3 +147,304 @@ print(results_4FC)
 results_15FC = stats_15FC.drop(columns=["mean", "std", "rad", "forecast_buffer_days"])
 results_15FC.rename(columns={"closest location": "FC"}, inplace=True)
 print(results_15FC)
+
+stats_1FC["robust_inventory_target_units"] = (
+    stats_1FC["mean"]
+    * stats_1FC["autonomy_threshold"]
+    + 2.33
+    * stats_1FC["std"]
+    * np.sqrt(stats_1FC["autonomy_threshold"])
+)
+
+stats_1FC["average_inventory"] = (
+    stats_1FC["robust_inventory_target_units"] - (
+        stats_1FC["mean"]
+        * stats_1FC["replenishment_interval"] / 2
+    )
+).round(2)
+print(stats_1FC)
+
+stats_4FC["robust_inventory_target_units"] = (
+    stats_4FC["mean"]
+    * stats_4FC["autonomy_threshold"]
+    + 2.33
+    * stats_4FC["std"]
+    * np.sqrt(stats_4FC["autonomy_threshold"])
+)
+
+stats_4FC["average_inventory"] = (
+    stats_4FC["robust_inventory_target_units"] - (
+        stats_4FC["mean"]
+        * stats_4FC["replenishment_interval"] / 2
+    )
+).round(2)
+print(stats_4FC)
+
+stats_15FC["robust_inventory_target_units"] = (
+    stats_15FC["mean"]
+    * stats_15FC["autonomy_threshold"]
+    + 2.33
+    * stats_15FC["std"]
+    * np.sqrt(stats_15FC["autonomy_threshold"])
+)
+
+stats_15FC["average_inventory"] = (
+    stats_15FC["robust_inventory_target_units"] - (
+        stats_15FC["mean"]
+        * stats_15FC["replenishment_interval"] / 2
+    )
+).round(2)
+print(stats_15FC)
+
+results_1FC["demand_share"] = 1.0
+
+demand_dict_4FC = dict(zip(t3.result_4FC["FC"], t3.result_4FC["Demand Share"]))
+results_4FC["demand_share"] = results_4FC["FC"].map(demand_dict_4FC)
+
+demand_dict_15FC = dict(zip(t3.result_15FC["FC"], t3.result_15FC["Demand Share"]))
+results_15FC["demand_share"] = results_15FC["FC"].map(demand_dict_15FC)
+
+results_1FC["RAD"] = stats_1FC["rad"]
+results_1FC["avg_inv"] = stats_1FC["average_inventory"]
+results_4FC["RAD"] = stats_4FC["rad"]
+results_4FC["avg_inv"] = stats_4FC["average_inventory"]
+results_15FC["RAD"] = stats_15FC["rad"]
+results_15FC["avg_inv"] = stats_15FC["average_inventory"]
+print(results_1FC)
+print(results_4FC)
+print(results_15FC)
+
+
+# add 21 day target inventory
+stats_1FC["target_inventory"] = (
+    21 * stats_1FC["mean"]
+    + 2.33 * stats_1FC["std"] * np.sqrt(21)
+)
+stats_4FC["target_inventory"] = (
+    21 * stats_4FC["mean"]
+    + 2.33 * stats_4FC["std"] * np.sqrt(21)
+)
+stats_15FC["target_inventory"] = (
+    21 * stats_15FC["mean"]
+    + 2.33 * stats_15FC["std"] * np.sqrt(21)
+)
+
+# simulate inventory to determine frequency of replenishment == 27
+floor_results_1FC = []
+
+for _, fc in stats_1FC.iterrows():
+
+    fc_name = fc["closest location"]
+    interval = int(fc["replenishment_interval"])
+    target = fc["target_inventory"]
+
+    demand = (
+        daily_demand_1FC[
+            daily_demand_1FC["closest location"] == fc_name
+        ]
+        .sort_values(["Week", "Day"])["Mean_Demand"]
+        .to_numpy()
+    )
+
+    inventory = target
+    num_replenishments = 0
+    num_floored = 0
+
+    daily_inventory = []
+
+    for day in range(len(demand)):
+
+        inventory -= demand[day]
+
+        # replenish every R days
+        if (day + 1) % interval == 0:
+
+            inventory_position = inventory
+
+            Q = max(target - inventory_position, 27)
+
+            num_replenishments += 1
+
+            if Q == 27:
+                num_floored += 1
+
+            inventory += Q
+
+        daily_inventory.append(inventory)
+
+    floor_frequency = (
+        num_floored / num_replenishments
+        if num_replenishments > 0
+        else 0
+    )
+
+    average_inventory = np.mean(daily_inventory)
+
+    floor_results_1FC.append({
+        "FC": fc_name,
+        "Total Replenishments": num_replenishments,
+        "27-Unit Replenishments": num_floored,
+        "27-Unit Frequency": floor_frequency,
+        "Average Inventory": average_inventory
+    })
+
+df_floor_results_1FC = pd.DataFrame(floor_results_1FC)
+print(df_floor_results_1FC)
+
+# again for 4FC
+floor_results_4FC = []
+
+for _, fc in stats_4FC.iterrows():
+
+    fc_name = fc["closest location"]
+    interval = int(fc["replenishment_interval"])
+    target = fc["target_inventory"]
+
+    demand = (
+        daily_demand_4FC[
+            daily_demand_4FC["closest location"] == fc_name
+        ]
+        .sort_values(["Week", "Day"])["Mean_Demand"]
+        .to_numpy()
+    )
+
+    inventory = target
+    num_replenishments = 0
+    num_floored = 0
+
+    daily_inventory = []
+
+    for day in range(len(demand)):
+
+        inventory -= demand[day]
+
+        # replenish every R days
+        if (day + 1) % interval == 0:
+
+            inventory_position = inventory
+
+            Q = max(target - inventory_position, 27)
+
+            num_replenishments += 1
+
+            if Q == 27:
+                num_floored += 1
+
+            inventory += Q
+
+        daily_inventory.append(inventory)
+
+    floor_frequency = (
+        num_floored / num_replenishments
+        if num_replenishments > 0
+        else 0
+    )
+
+    average_inventory = np.mean(daily_inventory)
+
+    floor_results_4FC.append({
+        "FC": fc_name,
+        "Total Replenishments": num_replenishments,
+        "27-Unit Replenishments": num_floored,
+        "27-Unit Frequency": floor_frequency,
+        "Average Inventory": average_inventory
+    })
+df_floor_results_4FC = pd.DataFrame(floor_results_4FC)
+print(df_floor_results_4FC)
+
+# again for 15FC
+floor_results_15FC = []
+
+for _, fc in stats_15FC.iterrows():
+
+    fc_name = fc["closest location"]
+    interval = int(fc["replenishment_interval"])
+    target = fc["target_inventory"]
+
+    demand = (
+        daily_demand_15FC[
+            daily_demand_15FC["closest location"] == fc_name
+        ]
+        .sort_values(["Week", "Day"])["Mean_Demand"]
+        .to_numpy()
+    )
+
+    inventory = target
+    num_replenishments = 0
+    num_floored = 0
+
+    daily_inventory = []
+
+    for day in range(len(demand)):
+
+        inventory -= demand[day]
+
+        # replenish every R days
+        if (day + 1) % interval == 0:
+
+            inventory_position = inventory
+
+            Q = max(target - inventory_position, 27)
+
+            num_replenishments += 1
+
+            if Q == 27:
+                num_floored += 1
+
+            inventory += Q
+
+        daily_inventory.append(inventory)
+
+    floor_frequency = (
+        num_floored / num_replenishments
+        if num_replenishments > 0
+        else 0
+    )
+
+    average_inventory = np.mean(daily_inventory)
+
+    floor_results_15FC.append({
+        "FC": fc_name,
+        "Total Replenishments": num_replenishments,
+        "27-Unit Replenishments": num_floored,
+        "27-Unit Frequency": floor_frequency,
+        "Average Inventory": average_inventory
+    })
+df_floor_results_15FC = pd.DataFrame(floor_results_15FC)
+print(df_floor_results_15FC)
+
+# add floor frequency and resulting average inventory to our results
+results_1FC["floor_freq"] = df_floor_results_1FC["27-Unit Frequency"].round(3)
+results_1FC["resulting_avg_inv"] = df_floor_results_1FC["Average Inventory"].round(2)
+print(results_1FC)
+results_4FC["floor_freq"] = df_floor_results_4FC["27-Unit Frequency"].round(3)
+results_4FC["resulting_avg_inv"] = df_floor_results_4FC["Average Inventory"].round(2)
+print(results_4FC)
+results_15FC["floor_freq"] = df_floor_results_15FC["27-Unit Frequency"].round(3)
+results_15FC["resulting_avg_inv"] = df_floor_results_15FC["Average Inventory"].round(2)
+print(results_15FC)
+
+# part d
+stats_1FC["typical_order_quantity"] = (
+    stats_1FC["mean"] * stats_1FC["replenishment_interval"]
+)
+stats_1FC["below_27_units"] = (
+    stats_1FC["typical_order_quantity"] < 27
+)
+print(stats_1FC)
+
+stats_4FC["typical_order_quantity"] = (
+    stats_4FC["mean"] * stats_4FC["replenishment_interval"]
+)
+stats_4FC["below_27_units"] = (
+    stats_4FC["typical_order_quantity"] < 27
+)
+print(stats_4FC)
+
+stats_15FC["typical_order_quantity"] = (
+    stats_15FC["mean"] * stats_15FC["replenishment_interval"]
+)
+stats_15FC["below_27_units"] = (
+    stats_15FC["typical_order_quantity"] < 27
+)
+print(stats_15FC)
