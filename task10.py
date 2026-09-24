@@ -5,6 +5,8 @@ import numpy as np
 
 with contextlib.redirect_stdout(io.StringIO()):
     import task3bc as t3
+with contextlib.redirect_stdout(io.StringIO()):
+    import task9 as t9
 
 
 # get demand dfs with closest location
@@ -138,15 +140,13 @@ stats_15FC["autonomy_threshold"] = np.ceil(stats_15FC["forecast_buffer_days"] + 
 
 results_1FC = stats_1FC.drop(columns=["mean", "std", "rad", "forecast_buffer_days"])
 results_1FC.rename(columns={"closest location": "FC"}, inplace=True)
-print(results_1FC)
 
 results_4FC = stats_4FC.drop(columns=["mean", "std", "rad", "forecast_buffer_days"])
 results_4FC.rename(columns={"closest location": "FC"}, inplace=True)
-print(results_4FC)
 
 results_15FC = stats_15FC.drop(columns=["mean", "std", "rad", "forecast_buffer_days"])
 results_15FC.rename(columns={"closest location": "FC"}, inplace=True)
-print(results_15FC)
+
 
 stats_1FC["robust_inventory_target_units"] = (
     stats_1FC["mean"]
@@ -162,7 +162,6 @@ stats_1FC["average_inventory"] = (
         * stats_1FC["replenishment_interval"] / 2
     )
 ).round(2)
-print(stats_1FC)
 
 stats_4FC["robust_inventory_target_units"] = (
     stats_4FC["mean"]
@@ -178,7 +177,6 @@ stats_4FC["average_inventory"] = (
         * stats_4FC["replenishment_interval"] / 2
     )
 ).round(2)
-print(stats_4FC)
 
 stats_15FC["robust_inventory_target_units"] = (
     stats_15FC["mean"]
@@ -194,7 +192,6 @@ stats_15FC["average_inventory"] = (
         * stats_15FC["replenishment_interval"] / 2
     )
 ).round(2)
-print(stats_15FC)
 
 results_1FC["demand_share"] = 1.0
 
@@ -210,8 +207,14 @@ results_4FC["RAD"] = stats_4FC["rad"]
 results_4FC["avg_inv"] = stats_4FC["average_inventory"]
 results_15FC["RAD"] = stats_15FC["rad"]
 results_15FC["avg_inv"] = stats_15FC["average_inventory"]
+
+# print part b results
+print("***** Part b: Parameters *****\n")
+print("\n ----- Single-FC -----")
 print(results_1FC)
+print("\n ----- Four-FC -----")
 print(results_4FC)
+print("\n ----- 15-FC -----")
 print(results_15FC)
 
 
@@ -289,7 +292,6 @@ for _, fc in stats_1FC.iterrows():
     })
 
 df_floor_results_1FC = pd.DataFrame(floor_results_1FC)
-print(df_floor_results_1FC)
 
 # again for 4FC
 floor_results_4FC = []
@@ -350,7 +352,6 @@ for _, fc in stats_4FC.iterrows():
         "Average Inventory": average_inventory
     })
 df_floor_results_4FC = pd.DataFrame(floor_results_4FC)
-print(df_floor_results_4FC)
 
 # again for 15FC
 floor_results_15FC = []
@@ -411,18 +412,43 @@ for _, fc in stats_15FC.iterrows():
         "Average Inventory": average_inventory
     })
 df_floor_results_15FC = pd.DataFrame(floor_results_15FC)
-print(df_floor_results_15FC)
 
 # add floor frequency and resulting average inventory to our results
 results_1FC["floor_freq"] = df_floor_results_1FC["27-Unit Frequency"].round(3)
 results_1FC["resulting_avg_inv"] = df_floor_results_1FC["Average Inventory"].round(2)
-print(results_1FC)
 results_4FC["floor_freq"] = df_floor_results_4FC["27-Unit Frequency"].round(3)
 results_4FC["resulting_avg_inv"] = df_floor_results_4FC["Average Inventory"].round(2)
-print(results_4FC)
 results_15FC["floor_freq"] = df_floor_results_15FC["27-Unit Frequency"].round(3)
 results_15FC["resulting_avg_inv"] = df_floor_results_15FC["Average Inventory"].round(2)
-print(results_15FC)
+
+partc_results_1FC = results_1FC[["FC", "floor_freq", "resulting_avg_inv"]]
+partc_results_4FC = results_4FC[["FC", "floor_freq", "resulting_avg_inv"]]
+partc_results_15FC = results_15FC[["FC", "floor_freq", "resulting_avg_inv"]]
+
+# get results from task 9 to compare
+task9_replenishment_df = pd.read_excel("outputs/task9/replenishment_summary_all_networks.xlsx")
+task9_replenishment_df_1FC = task9_replenishment_df[task9_replenishment_df["network"] == "1-FC"]
+task9_replenishment_df_4FC = task9_replenishment_df[task9_replenishment_df["network"] == "4-FC"]
+task9_replenishment_df_15FC = task9_replenishment_df[task9_replenishment_df["network"] == "15-FC"]
+
+task9_result_1FC = task9_replenishment_df_1FC[["FC", "floor_frequency_pct", "average_end_of_day_inventory_units"]]
+task9_result_4FC = task9_replenishment_df_4FC[["FC", "floor_frequency_pct", "average_end_of_day_inventory_units"]]
+task9_result_15FC = task9_replenishment_df_15FC[["FC", "floor_frequency_pct", "average_end_of_day_inventory_units"]]
+
+# print part c results
+print("\n\n***** Part c: Floor Frequency *****\n")
+print("\n ----- Single-FC: Task 10 -----")
+print(partc_results_1FC)
+print("\n ----- Single-FC: Task 9 -----")
+print(task9_result_1FC)
+print("\n ----- Four-FC: Task 10 -----")
+print(partc_results_4FC)
+print("\n ----- Four-FC: Task 9 -----")
+print(task9_result_4FC)
+print("\n ----- 15-FC: Task 10 -----")
+print(partc_results_15FC)
+print("\n ----- 15-FC: Task 9 -----")
+print(task9_result_15FC)
 
 # part d
 stats_1FC["typical_order_quantity"] = (
@@ -431,7 +457,6 @@ stats_1FC["typical_order_quantity"] = (
 stats_1FC["below_27_units"] = (
     stats_1FC["typical_order_quantity"] < 27
 )
-print(stats_1FC)
 
 stats_4FC["typical_order_quantity"] = (
     stats_4FC["mean"] * stats_4FC["replenishment_interval"]
@@ -439,7 +464,6 @@ stats_4FC["typical_order_quantity"] = (
 stats_4FC["below_27_units"] = (
     stats_4FC["typical_order_quantity"] < 27
 )
-print(stats_4FC)
 
 stats_15FC["typical_order_quantity"] = (
     stats_15FC["mean"] * stats_15FC["replenishment_interval"]
@@ -447,4 +471,3 @@ stats_15FC["typical_order_quantity"] = (
 stats_15FC["below_27_units"] = (
     stats_15FC["typical_order_quantity"] < 27
 )
-print(stats_15FC)
