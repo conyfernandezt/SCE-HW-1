@@ -120,7 +120,7 @@ The code logic:
 1.	The results from task 7 are taken and pursuit production is calculated. It includes how much the assembly factory should produce each day to cover the day’s demand and move the DC inventory towards target. Highest and average daily production are reported. 
 2.	Full smoothing without pre-production is calculated by setting production to a constant rate based on average demand. The code assumed different assumptions about how much starting inventory is available and if the inventory drops below zero, a backlog is generated. 
 3.	Full smoothing with pre-production is attempted. The production rate is again kept constant but the inventory calculation is done for prior to day 1 to cover excess demand periods. Required starting inventory is reported along with advanced production days. 
-4.	Segmented smoothing is also tried. But this divides the planning period into 5 segmnets. Once again, production stays constant within the segment, but can vary between segments. Resulting DC inventory is obtained, varying the starting inventory assumptions.
+4.	Segmented smoothing is also tried. But this divides the planning period into 5 segments. The demand was mapped out throughout the year and given time periods with similar demands. Once again, production stays constant within the segment, but can vary between segments. Resulting DC inventory is obtained, varying the starting inventory assumptions.
 5.	Production and inventory results are plotted and a comparison is done between the different methods. 
 
 ## Task 9
