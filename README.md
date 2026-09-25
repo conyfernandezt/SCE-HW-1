@@ -108,10 +108,20 @@ The code logic:
 
 
 ## Task 7
-1. test1
-
+1. The daily demand estimates are taken from task 2 and the file containing distances from each ZIP3 area to the FCs.
+2. For each ZIP3 area the closest FC is calculated seperately for the 15, 4 and 1-FC networks.
+3. Daily demand is calculated at each FC and combined with demand uncertainty. 
+4. Next, the FC inventory target is computed. For every day, it looks ahead for 21 days and estimates the stock that the FC needs for a 3 weeks of demand at 99% robustness. Finally it computes each FC's highest target during the planning period. 
+5. It looks ahead for a 42 day period to find the stock needed across the entire network for 6 weeks at 99% robustness. The stock assigned to the FCs is subtracted to obtain the DC target.
+6. The network calculations are repeated for 4, 6 and 8 weeks each at a robustness level of 50%, 68%, 95% and 99%. Maximum stock required at the FCs, DC and whole network is compared. 
+7. Comparison tables and graphs are generated for maximum FC inventory comparison, daily FC/DC/network inventory and variation of maximum inventory changes across different policies.
 
 ## Task 8
+1.	The results from task 7 are taken and pursuit production is calculated. It includes how much the assembly factory should produce each day to cover the day’s demand and move the DC inventory towards target. Highest and average daily production are reported. 
+2.	Full smoothing without pre-production is calculated by setting production to a constant rate based on average demand. The code assumed different assumptions about how much starting inventory is available and if the inventory drops below zero, a backlog is generated. 
+3.	Full smoothing with pre-production is attempted. The production rate is again kept constant but the inventory calculation is done for prior to day 1 to cover excess demand periods. Required starting inventory is reported along with advanced production days. 
+4.	Segmented smoothing is also tried. But this divides the planning period into 5 segmnets. Once again, production stays constant within the segment, but can vary between segments. Resulting DC inventory is obtained, varying the starting inventory assumptions.
+5.	Production and inventory results are plotted and a comparison is done between the different methods. 
 
 ## Task 9
 1. The FC networks are defined
